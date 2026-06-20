@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 2: Tokens and Embeddings</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Source+Code+Pro:wght@400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a2744;--navy2:#1e3060;--orange:#e8a020;--orange2:#f5b830;--blue:#2255cc;--blue2:#3366dd;--light-blue:#dce8ff;--light-blue2:#eaf0ff;--yellow:#fff3b0;--yellow2:#fffae0;--green:#2a7a3b;--light-green:#e8f5eb;--red:#cc2222;--light-red:#fdecea;--gray:#f4f6fb;--border:#b8c8e8;--text:#1a2030;--code-bg:#1e2a40;--code-text:#e8f0ff;--gold:#c8960c}
+body{font-family:'Nunito',sans-serif;background:#e8ecf8;color:var(--text);font-size:13px;line-height:1.5}
+.header{background:var(--navy);color:white;text-align:center;padding:16px 24px 12px;border-bottom:4px solid var(--orange)}
+.header-inner{display:flex;align-items:center;justify-content:center;gap:14px}
+.header h1{font-size:23px;font-weight:900;line-height:1.1}
+.header h1 span{color:var(--orange)}
+.header p{font-size:12px;color:#c8d4f0;max-width:900px;margin:4px auto 0}
+.page{max-width:1440px;margin:0 auto;padding:8px 8px 20px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:8px}
+.row>*{flex:1;min-width:0}
+.col2{flex:2}.col3{flex:3}
+.card{background:white;border:1.5px solid var(--border);border-radius:7px;overflow:hidden}
+.ch{background:var(--navy);color:white;font-size:11.5px;font-weight:800;padding:5px 9px;text-transform:uppercase;letter-spacing:.4px}
+.ch.orange{background:var(--orange);color:var(--navy)}
+.ch.green{background:var(--green)}
+.ch.red{background:var(--red)}
+.cb{padding:9px}
+ul.ck{list-style:none}
+ul.ck li{display:flex;gap:6px;align-items:flex-start;margin-bottom:4px;font-size:12px}
+ul.ck li::before{content:"✅";font-size:10px;margin-top:2px;flex-shrink:0}
+ul.ck li.dot::before{content:"•";font-size:14px;color:var(--navy);margin-top:0}
+ul.ck li.x::before{content:"❌"}
+ul.ck li.plus::before{content:"✚";color:var(--green);font-size:12px}
+ul.ck li.minus::before{content:"✖";color:var(--red);font-size:12px}
+ul.ck li.star::before{content:"⭐"}
+.flow{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:5px 0}
+.fn{background:var(--light-blue);border:1.5px solid var(--blue);border-radius:5px;padding:4px 8px;font-size:11px;font-weight:700;text-align:center}
+.fn.dark{background:var(--navy);color:white;border-color:var(--navy)}
+.fn.green{background:var(--light-green);border-color:var(--green)}
+.fn.orange{background:#fff0d0;border-color:var(--orange)}
+.fa{font-size:14px;color:#555;font-weight:900}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th{background:var(--navy);color:white;padding:4px 7px;text-align:left;font-weight:700;font-size:11px}
+td{padding:3px 7px;border-bottom:1px solid #dde4f0;vertical-align:top}
+tr:nth-child(even) td{background:var(--gray)}
+pre{background:var(--code-bg);color:var(--code-text);font-family:'Source Code Pro',monospace;font-size:10.5px;padding:8px 10px;border-radius:5px;overflow-x:auto;line-height:1.5;margin:4px 0;white-space:pre}
+.kw{color:#79b8ff}.str{color:#9ecbff}.cm{color:#6a8099;font-style:italic}.num{color:#f8c555}
+.tip{background:var(--yellow2);border:1.5px solid var(--gold);border-radius:5px;padding:6px 8px;font-size:11.5px;margin-top:5px}
+.tip strong{color:var(--navy)}
+.tkw{background:var(--yellow);border:2px solid var(--gold);border-radius:6px;padding:8px;margin-top:6px;font-size:12px}
+.tkw-title{font-weight:800;color:var(--navy);margin-bottom:3px}
+.bold{font-weight:800}.small{font-size:11px}
+.mt4{margin-top:4px}.mt6{margin-top:6px}.mb4{margin-bottom:4px}.mb6{margin-bottom:6px}
+.navy{color:var(--navy)}.green-t{color:var(--green)}.red-t{color:var(--red)}.orange-t{color:var(--orange)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.tag{display:inline-block;background:var(--navy);color:white;font-size:10px;padding:2px 5px;border-radius:3px;margin:2px 2px}
+.tag.blue{background:var(--blue2)}
+.tag.green{background:var(--green)}
+.tag.orange{background:var(--orange);color:var(--navy)}
+.embed-vec{background:var(--light-blue);border:1px solid var(--blue);border-radius:4px;padding:5px 7px;font-family:monospace;font-size:11px;margin:3px 0}
+.token-box{display:inline-flex;align-items:center;justify-content:center;background:var(--light-blue);border:1.5px solid var(--blue);border-radius:4px;padding:3px 6px;font-size:11px;font-weight:700;margin:2px}
+.token-box.green{background:var(--light-green);border-color:var(--green)}
+.token-box.orange{background:#fff0d0;border-color:var(--orange)}
+.ibox{border:1.5px solid var(--border);border-radius:6px;overflow:hidden;margin-top:5px}
+.ibox-h{background:var(--navy2);color:white;font-size:11px;font-weight:700;padding:3px 8px}
+.ibox-h.orange{background:var(--orange);color:var(--navy)}
+.ibox-h.blue{background:var(--blue2)}
+.ibox-h.green{background:var(--green)}
+.ibox-b{padding:7px;font-size:11.5px}
+.bottom-banner{background:var(--navy);color:white;padding:10px 16px;border-radius:6px;font-size:12.5px;text-align:center;margin-top:4px;line-height:1.6}
+.bottom-banner strong{color:var(--orange2)}
+.vs-row{display:flex;gap:8px;margin-top:6px}
+.vs-box{flex:1;border:1.5px solid var(--border);border-radius:5px;padding:7px;font-size:11.5px}
+.vs-title{font-weight:800;font-size:12px;margin-bottom:4px;color:var(--navy)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-inner">
+    <div style="font-size:44px">📚</div>
+    <div>
+      <h1>CHAPTER 2: <span>TOKENS AND EMBEDDINGS</span></h1>
+      <p>In this chapter, we dive deep into tokens and embeddings — how text is broken into tokens, how tokens are converted into vectors, and why embeddings are the foundation for modern LLM applications.</p>
+    </div>
+    <div style="font-size:42px">🧠</div>
+  </div>
+</div>
+
+<div class="page">
+
+<!-- ROW 1 -->
+<div class="row">
+  <!-- 1. WHAT YOU'LL LEARN -->
+  <div class="card">
+    <div class="ch">1. What You'll Learn</div>
+    <div class="cb">
+      <ul class="ck">
+        <li>What tokens are and why they matter</li>
+        <li>How tokenization works (including subword tokenization)</li>
+        <li>Different types of tokenizers</li>
+        <li>Tokenization in practice (with examples)</li>
+        <li>What embeddings are and why they are useful</li>
+        <li>How embeddings are created for tokens</li>
+        <li>Types of embeddings</li>
+        <li>Visualizing embeddings</li>
+        <li>Key properties and limitations of embeddings</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 2. WHY TOKENS & EMBEDDINGS ARE IMPORTANT -->
+  <div class="card col2">
+    <div class="ch">2. Why Tokens and Embeddings Are Important</div>
+    <div class="cb">
+      <div class="small mb4">LLMs don't understand raw text. They work with numbers.</div>
+      <div class="flow" style="flex-direction:column;gap:6px">
+        <div style="background:var(--light-blue2);border:1.5px solid var(--blue);border-radius:5px;padding:7px;font-size:12px;text-align:center">
+          <div class="bold">Text (human-readable)</div>
+          <div style="font-style:italic;margin-top:3px">"The weather is absolutely beautiful today!"</div>
+        </div>
+        <div style="text-align:center;font-size:18px;color:var(--navy)">⬇</div>
+        <div style="background:var(--light-green);border:1.5px solid var(--green);border-radius:5px;padding:7px;font-size:12px;text-align:center">
+          <div class="bold">Numbers (model-readable)</div>
+          <div style="font-family:monospace;margin-top:3px">[5021, 1037, 318, 8725, …]</div>
+        </div>
+        <div style="text-align:center;font-size:18px;color:var(--navy)">⬇</div>
+        <div style="background:#fff0d0;border:1.5px solid var(--orange);border-radius:5px;padding:7px;font-size:12px;text-align:center">
+          <div class="bold">Embedding Vector (example)</div>
+          <div style="font-family:monospace;margin-top:3px">0.12 &nbsp; -0.34 &nbsp; 0.56 &nbsp; … &nbsp; -0.08 &nbsp; 0.91</div>
+        </div>
+      </div>
+      <div class="tkw mt4">
+        <div class="tkw-title">💡 Key Idea:</div>
+        Tokens turn text into manageable units. Embeddings turn tokens into meaningful vectors.
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. TOKENS: THE BUILDING BLOCKS OF TEXT FOR LLMs -->
+  <div class="card col2">
+    <div class="ch">3. Tokens: The Building Blocks of Text for LLMs</div>
+    <div class="cb">
+      <div class="small mb4">A token can be:</div>
+      <ul class="ck">
+        <li>A whole word: "hello"</li>
+        <li>A subword: "##ing"</li>
+        <li>A character: "a"</li>
+        <li>A punctuation: "!"</li>
+      </ul>
+      <div class="small mt4 mb4">Models operate on sequences of token IDs (integers), not text.</div>
+      <div class="bold small mb4">Example:</div>
+      <div style="font-size:12px;margin-bottom:4px">Text: "Playing football is fun!"</div>
+      <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:4px">
+        <div class="token-box">Playing</div><div class="token-box">football</div>
+        <div class="token-box">is</div><div class="token-box">fun</div><div class="token-box">!</div>
+      </div>
+      <div class="small mb4"><strong>Token IDs (example):</strong></div>
+      <div style="font-family:monospace;font-size:12px;background:var(--light-blue);border:1.5px solid var(--blue);border-radius:4px;padding:5px">3456 &nbsp; 7892 &nbsp; 2003 &nbsp; 4567 &nbsp; 23 &nbsp; 33</div>
+      <div class="tip mt4">The same text can be tokenized differently depending on the tokenizer.</div>
+    </div>
+  </div>
+
+  <!-- 4. HOW TOKENIZATION WORKS -->
+  <div class="card col2">
+    <div class="ch">4. How Tokenization Works</div>
+    <div class="cb">
+      <div class="small mb4">Tokenization = process of breaking text into tokens.</div>
+      <div class="bold small mb4">Goals:</div>
+      <ul class="ck">
+        <li>Cover all possible text</li>
+        <li>Be efficient (fewer tokens is better)</li>
+        <li>Handle rare/unknown words</li>
+        <li>Preserve meaning as much as possible</li>
+      </ul>
+      <div class="bold small mt4 mb4">General Steps:</div>
+      <ol style="list-style:none;counter-reset:s;padding:0">
+        <li style="counter-increment:s;display:flex;gap:7px;margin-bottom:5px;font-size:12px">
+          <span style="background:var(--navy);color:white;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0">1</span>
+          Normalize text (lowercase, remove extra spaces, etc.)
+        </li>
+        <li style="counter-increment:s;display:flex;gap:7px;margin-bottom:5px;font-size:12px">
+          <span style="background:var(--navy);color:white;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0">2</span>
+          Split text (using rules or algorithms)
+        </li>
+        <li style="counter-increment:s;display:flex;gap:7px;margin-bottom:5px;font-size:12px">
+          <span style="background:var(--navy);color:white;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0">3</span>
+          Convert tokens to token IDs (using a vocabulary)
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- 5. TYPES OF TOKENIZERS -->
+  <div class="card col2">
+    <div class="ch">5. Types of Tokenizers</div>
+    <div class="cb">
+      <div class="ibox mb4">
+        <div class="ibox-h orange">① Whitespace Tokenizer (Simplest)</div>
+        <div class="ibox-b">
+          Splits on spaces.<br>
+          <strong>Example:</strong> "hello world" → ["hello", "world"]<br>
+          <span class="green-t">✅ Easy to implement</span><br>
+          <span class="red-t">❌ Large vocab, can't handle rare words well</span>
+        </div>
+      </div>
+      <div class="ibox mb4">
+        <div class="ibox-h blue">② Character Tokenizer</div>
+        <div class="ibox-b">
+          Splits into characters.<br>
+          <strong>Example:</strong> "Hi!" → ["H", "i", "!"]<br>
+          <span class="green-t">✅ Small vocab</span> &nbsp; <span class="red-t">❌ Long sequences</span>
+        </div>
+      </div>
+      <div class="ibox">
+        <div class="ibox-h green">③ Subword Tokenizer (Most common in LLMs)</div>
+        <div class="ibox-b">
+          Splits words into subword units.<br>
+          <strong>Example:</strong> "unbelievable" → ["un", "believe", "able"]<br>
+          <span class="green-t">✅ Handles rare words</span> &nbsp; <span class="green-t">✅ Efficient</span><br>
+          <span class="green-t">✅ Widely used (BPE, WordPiece)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 2 -->
+<div class="row">
+  <!-- 6. SUBWORD TOKENIZATION IN DETAIL -->
+  <div class="card col3">
+    <div class="ch">6. Subword Tokenization in Detail</div>
+    <div class="cb">
+      <div class="small mb4">Subword tokenization balances the best of both worlds: It reduces vocabulary size while handling rare and unseen words.</div>
+      <div class="three">
+        <div>
+          <div class="bold small mb4 navy">1. BPE (Byte Pair Encoding)</div>
+          <div class="small mb4">Starts with characters. Merges most frequent pairs iteratively.</div>
+          <div class="small mb4">Used by: GPT-2, GPT-3, LLaMA 2</div>
+          <div class="small mb4"><strong>Example (low → high merges):</strong></div>
+          <div style="font-size:11px">1. low est → low_est<br>2. low_est → lower<br>3. lower est → lowest</div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:6px">
+            <div class="token-box">low</div><div class="token-box">est</div>
+            <div style="font-size:12px;align-self:center">→</div>
+            <div class="token-box green">lower</div>
+            <div class="token-box green">est</div>
+          </div>
+        </div>
+        <div>
+          <div class="bold small mb4 navy">2. WordPiece</div>
+          <div class="small mb4">Greedy algorithm that maximises the likelihood of the corpus.</div>
+          <div class="small mb4">Used by: BERT, RoBERTa</div>
+          <div class="small mb4"><strong>Example:</strong></div>
+          <div style="font-size:11px">unbelievable → un##believe##able</div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:6px">
+            <div class="token-box">un</div><div class="token-box">##believe</div><div class="token-box">##able</div>
+          </div>
+        </div>
+        <div>
+          <div class="bold small mb4 navy">3. SentencePiece</div>
+          <div class="small mb4">Language-independent (no pre-tokenization needed).</div>
+          <div class="small mb4">Used by: T5, mT5, LLaMA 2</div>
+          <div class="small mb4"><strong>Example:</strong></div>
+          <div style="font-size:11px">international → ▁international</div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:6px">
+            <div class="token-box orange">▁international</div>
+          </div>
+          <div class="small mt4">▁ indicates a new word boundary</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. TOKENIZATION EXAMPLES -->
+  <div class="card col3">
+    <div class="ch">7. Tokenization Examples (Same Sentence, Different Tokenizers)</div>
+    <div class="cb">
+      <div class="small mb4"><strong>Text:</strong> "The smartest AI will change the world."</div>
+      <table>
+        <thead><tr><th>Tokenizer</th><th>Tokens</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Whitespace</strong></td><td>[The, smartest, AI, will, change, the, world,.]</td></tr>
+          <tr><td><strong>Character</strong></td><td>[T, h, e, &lt;s&gt;, m, a, r, t, e, s, t, &lt;s&gt;, A, I, …]</td></tr>
+          <tr><td><strong>BPE (GPT-2)</strong></td><td>[The, smartest, AI, will, change, the, world,.]</td></tr>
+          <tr><td><strong>WordPiece (BERT)</strong></td><td>[the, _smartest, _AI, _will, _change, _the, _world,.]</td></tr>
+          <tr><td><strong>SentencePiece (T5)</strong></td><td>[▁The, ▁smart, est, ▁AI, ▁will, _change, _the, _world,.]</td></tr>
+        </tbody>
+      </table>
+      <div class="tkw mt4"><div class="tkw-title">⭐ Takeaway:</div>Tokenization affects sequence length, model efficiency, and even performance!</div>
+    </div>
+  </div>
+
+  <!-- 8. SPECIAL TOKENS -->
+  <div class="card col2">
+    <div class="ch">8. Special Tokens</div>
+    <div class="cb">
+      <div class="small mb4">LLMs use special tokens for specific tasks.</div>
+      <table>
+        <thead><tr><th>Token</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><strong>[PAD]</strong></td><td>Padding sequences to same length</td></tr>
+          <tr><td><strong>[UNK]</strong></td><td>Unknown words</td></tr>
+          <tr><td><strong>[CLS]</strong></td><td>Classification token (used in BERT)</td></tr>
+          <tr><td><strong>[SEP]</strong></td><td>Separator between sentences</td></tr>
+          <tr><td><strong>[BOS]</strong></td><td>Beginning of sequence</td></tr>
+          <tr><td><strong>[EOS]</strong></td><td>End of sequence</td></tr>
+          <tr><td><strong>[MASK]</strong></td><td>Masking tokens (used in BERT)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 9. FROM TOKENS TO EMBEDDINGS -->
+  <div class="card col2">
+    <div class="ch">9. From Tokens to Embeddings</div>
+    <div class="cb">
+      <div class="small mb4">Each token ID is mapped to a dense vector (embedding).</div>
+      <div class="small mb4"><strong>Example:</strong></div>
+      <table>
+        <thead><tr><th>Token</th><th>Token ID</th><th>Embedding (dimension = 6)</th></tr></thead>
+        <tbody>
+          <tr><td>The</td><td>464</td><td style="font-family:monospace;font-size:10.5px">[0.21, -0.31, 0.45, 0.12, 0.08, -0.15]</td></tr>
+          <tr><td>smartest</td><td>9281</td><td style="font-family:monospace;font-size:10.5px">[0.33, -0.12, 0.77, -0.31, -0.22, …]</td></tr>
+          <tr><td>AI</td><td>1423</td><td style="font-family:monospace;font-size:10.5px">[0.11, 0.44, -0.33, 0.66, 0.91, …]</td></tr>
+        </tbody>
+      </table>
+      <div class="tip mt4">Embeddings capture semantic meaning in a continuous vector space.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 3 -->
+<div class="row">
+  <!-- 10. HOW EMBEDDINGS ARE CREATED -->
+  <div class="card col2">
+    <div class="ch">10. How Embeddings Are Created</div>
+    <div class="cb">
+      <div class="small mb4">Embeddings are learned during training. Two main methods:</div>
+      <div class="ibox mb4">
+        <div class="ibox-h blue">1. Lookup Embeddings (Most common)</div>
+        <div class="ibox-b">
+          <ul class="ck">
+            <li class="dot">Each token ID looks up a vector in an embedding matrix.</li>
+            <li class="dot">Matrix is learned during training.</li>
+          </ul>
+          <div class="small mt4"><strong>Example:</strong></div>
+          <div style="font-size:11.5px;margin-top:3px">Token ID → Embedding Vector (dim = 6)<br>
+          464 → [0.12, -0.34, …, 0.91]</div>
+        </div>
+      </div>
+      <div class="ibox">
+        <div class="ibox-h" style="background:#6633aa">2. Contextual Embeddings (Advanced)</div>
+        <div class="ibox-b">
+          <ul class="ck">
+            <li class="dot">Embedding depends on context.</li>
+            <li class="dot">Generated by models like BERT, GPT.</li>
+            <li class="dot">Same token can have different embeddings in different sentences.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. TYPES OF EMBEDDINGS -->
+  <div class="card col2">
+    <div class="ch">11. Types of Embeddings</div>
+    <div class="cb">
+      <div class="three">
+        <div style="border:1.5px solid var(--border);border-radius:5px;padding:7px;background:var(--gray)">
+          <div class="bold small mb4 navy">1. Static Embeddings (Non-contextual)</div>
+          <div class="small mb4">Same for a word regardless of context.</div>
+          <div class="small">Example: word2vec</div>
+        </div>
+        <div style="border:1.5px solid var(--border);border-radius:5px;padding:7px;background:var(--light-blue2)">
+          <div class="bold small mb4 navy">2. Contextual Embeddings</div>
+          <div class="small mb4">Change based on surrounding words.</div>
+          <div class="small">Example: BERT</div>
+        </div>
+        <div style="border:1.5px solid var(--border);border-radius:5px;padding:7px;background:var(--light-green)">
+          <div class="bold small mb4 navy">3. Positional Embeddings</div>
+          <div class="small mb4">Encode position in the sequence.</div>
+          <div class="small">Used in Transformers (Positional Encoding)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. VISUALIZING EMBEDDINGS -->
+  <div class="card col2">
+    <div class="ch">12. Visualizing Embeddings</div>
+    <div class="cb">
+      <div class="small mb4">Embeddings live in high-dimensional space. We can visualize them using dimensionality reduction (e.g., t-SNE, PCA).</div>
+      <div style="background:var(--light-blue2);border:1.5px solid var(--blue);border-radius:5px;padding:8px;font-size:11px;text-align:center">
+        <div style="display:flex;justify-content:space-around;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+          <span style="color:var(--navy);font-weight:700">king 👑</span>
+          <span style="color:var(--navy);font-weight:700">queen 👸</span>
+          <span style="color:#2a7a3b;font-weight:700">man 👨</span>
+          <span style="color:#2a7a3b;font-weight:700">woman 👩</span>
+        </div>
+        <div style="display:flex;justify-content:space-around;flex-wrap:wrap;gap:6px">
+          <span style="color:var(--red);font-weight:700">apple 🍎</span>
+          <span style="color:var(--red);font-weight:700">banana 🍌</span>
+          <span style="color:var(--orange);font-weight:700">car 🚗</span>
+          <span style="color:var(--orange);font-weight:700">truck 🚛</span>
+          <span style="color:var(--orange);font-weight:700">bus 🚌</span>
+        </div>
+      </div>
+      <div class="tip mt4">Words with similar meanings are closer in vector space!</div>
+      <div class="small mt4">Transformers = Token Embeddings + Positional Embeddings</div>
+    </div>
+  </div>
+
+  <!-- 13. PROPERTIES OF GOOD EMBEDDINGS -->
+  <div class="card col2">
+    <div class="ch">13. Properties of Good Embeddings</div>
+    <div class="cb">
+      <ul class="ck">
+        <li>Capture semantic similarity</li>
+        <li>Generalize to unseen data</li>
+        <li>Smooth and continuous space</li>
+        <li>Support mathematical operations</li>
+      </ul>
+      <div style="background:var(--yellow);border:2px solid var(--gold);border-radius:5px;padding:7px;font-size:12px;margin-top:6px;text-align:center">
+        <div class="bold mb4">king − man + woman = queen</div>
+        <div class="small">This is possible because embeddings capture relationships mathematically!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14. CHALLENGES & LIMITATIONS -->
+  <div class="card col2">
+    <div class="ch red">14. Challenges &amp; Limitations</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="x">High-dimensional vectors (costly to compute)</li>
+        <li class="x">Curse of dimensionality</li>
+        <li class="x">Bias in embeddings (can reflect societal biases)</li>
+        <li class="x">OOV (Out-of-Vocabulary) words in static embeddings</li>
+        <li class="x">Contextual embeddings are computationally expensive</li>
+      </ul>
+      <div style="display:flex;align-items:center;justify-content:center;margin-top:8px;font-size:28px">⚠️</div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 4 -->
+<div class="row">
+  <!-- 15. TOKENIZATION IN PRACTICE (PYTHON) -->
+  <div class="card col2">
+    <div class="ch">15. Tokenization in Practice (Python Example)</div>
+    <div class="cb">
+      <div class="bold small mb4">Using Hugging Face Transformers library</div>
+      <div class="small mb4"><strong>Code Example:</strong></div>
+<pre><span class="kw">from</span> transformers <span class="kw">import</span> AutoTokenizer
+
+<span class="cm"># Load tokenizer</span>
+tokenizer = AutoTokenizer.from_pretrained(<span class="str">"bert-base-uncased"</span>)
+text = <span class="str">"The smartest AI will change the world."</span>
+
+<span class="cm"># Tokenize</span>
+encoded = tokenizer(text, return_tensors=<span class="str">'pt'</span>)
+print(encoded)</pre>
+      <div class="bold small mt4 mb4">Output (example):</div>
+<pre>{'input_ids': tensor([[  101, 1996, 22554, 3722,
+  2097, 1037, 3815, 2009, 2088,  102]]),
+ 'token_type_ids': tensor([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]),
+ 'attention_mask': tensor([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])}</pre>
+      <div class="bold small mt4 mb4">Decoded Tokens:</div>
+      <div style="font-family:monospace;font-size:11px;background:var(--light-blue);border:1px solid var(--blue);border-radius:4px;padding:6px">
+        101 → [CLS]<br>1996 → The<br>22554 → smartest<br>3722 → AI<br>2097 → will<br>1037 → a<br>3815 → ##ll<br>2009 → the<br>2088 → world<br>102 → [SEP]
+      </div>
+    </div>
+  </div>
+
+  <!-- 16. EMBEDDING IN PRACTICE (PYTHON) -->
+  <div class="card col3">
+    <div class="ch">16. Embedding in Practice (Python Example)</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="bold small mb4">Code Example:</div>
+<pre><span class="kw">from</span> transformers <span class="kw">import</span> AutoTokenizer, AutoModel
+<span class="kw">import</span> torch
+
+<span class="cm"># Load model and tokenizer</span>
+tokenizer = AutoTokenizer.from_pretrained(
+    <span class="str">"bert-base-uncased"</span>)
+model = AutoModel.from_pretrained(
+    <span class="str">"bert-base-uncased"</span>)
+
+inputs = tokenizer(texts, padding=<span class="kw">True</span>,
+    truncation=<span class="kw">True</span>, return_tensors=<span class="str">'pt'</span>)
+
+<span class="cm"># Get embeddings (last hidden state)</span>
+<span class="kw">with</span> torch.no_grad():
+    outputs = model(**inputs)
+    embeddings = outputs.last_hidden_state
+
+print(embeddings.shape)
+<span class="cm"># (1, seq_len, hidden_dim)</span></pre>
+          <div class="small mt4">Used in Transformers to get contextual embeddings.</div>
+        </div>
+        <div>
+          <div class="bold small mb4">Example Output:</div>
+          <div style="background:var(--light-blue);border:1.5px solid var(--blue);border-radius:5px;padding:7px;font-size:11.5px">
+            <div class="bold mb4">embeddings.shape</div>
+            <div style="font-family:monospace">torch.Size([1, 10, 768])</div>
+            <div class="small mt4">1 = batch size<br>10 = sequence length<br>768 = embedding dimension (hidden size)</div>
+          </div>
+          <div class="tip mt6">Simple API, powerful embeddings.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 17. KEY TAKEAWAYS -->
+  <div class="card col2">
+    <div class="ch orange">17. Key Takeaways</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="star">Tokens convert text into model-understandable units.</li>
+        <li class="star">Tokenization affects efficiency and performance.</li>
+        <li class="star">Subword tokenization (BPE, WordPiece) is the standard in modern LLMs.</li>
+        <li class="star">Embeddings turn tokens into meaningful vectors.</li>
+        <li class="star">Embeddings can be static, contextual, or positional.</li>
+        <li class="star">Embeddings capture semantic relationships in continuous space.</li>
+        <li class="star">They are the foundation for nearly all LLM capabilities.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 5 -->
+<div class="row">
+  <!-- 18. REAL-WORLD APPLICATIONS -->
+  <div class="card col2">
+    <div class="ch">18. Real-World Applications of Embeddings</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:6px">
+            <span style="font-size:18px">🔍</span>
+            <div><div class="bold small">Semantic Search / RAG</div><div class="small">Find similar documents or passages</div></div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:6px">
+            <span style="font-size:18px">🎯</span>
+            <div><div class="bold small">Recommendation Systems</div><div class="small">Recommend items based on similarity</div></div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:flex-start">
+            <span style="font-size:18px">🤖</span>
+            <div><div class="bold small">Chatbots &amp; Assistants</div><div class="small">Recognise intent and retrieve info</div></div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:6px">
+            <span style="font-size:18px">🌐</span>
+            <div><div class="bold small">Machine Translation</div><div class="small">Map meanings across languages</div></div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:flex-start">
+            <span style="font-size:18px">🏷️</span>
+            <div><div class="bold small">Text Classification</div><div class="small">Classify text into categories</div></div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:flex-start;margin-top:6px">
+            <span style="font-size:18px">📁</span>
+            <div><div class="bold small">Clustering</div><div class="small">Group similar texts or items</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 19. WHERE WE ARE HEADED NEXT -->
+  <div class="card col2">
+    <div class="ch orange">19. Where We Are Headed Next</div>
+    <div class="cb">
+      <div class="flow" style="justify-content:center">
+        <div style="text-align:center;font-size:11.5px;border:1.5px solid var(--border);border-radius:5px;padding:6px 8px;background:var(--gray)">
+          <div style="font-size:18px">📖</div>
+          CHAPTER 1<br>Introduction to LLMs
+        </div>
+        <div class="fa">→</div>
+        <div style="text-align:center;font-size:11.5px;border:2px solid var(--orange);border-radius:5px;padding:6px 8px;background:var(--yellow)">
+          <div style="font-size:18px">🔑</div>
+          CHAPTER 2<br>Tokens and Embeddings<br><em>(You are here)</em>
+        </div>
+        <div class="fa">→</div>
+        <div style="text-align:center;font-size:11.5px;border:1.5px solid var(--border);border-radius:5px;padding:6px 8px;background:var(--gray)">
+          <div style="font-size:18px">🏗️</div>
+          CHAPTER 3<br>Transformer Architecture
+        </div>
+        <div class="fa">→</div>
+        <div style="text-align:center;font-size:11.5px;border:1.5px solid var(--border);border-radius:5px;padding:6px 8px;background:var(--gray)">
+          <div style="font-size:18px">⚙️</div>
+          CHAPTER 4+<br>Applications &amp; Fine-tuning
+        </div>
+      </div>
+      <div class="small mt4 center">Tokens → Embeddings → Transformers → Intelligence</div>
+    </div>
+  </div>
+
+  <!-- 20. GLOSSARY -->
+  <div class="card col2">
+    <div class="ch">20. Glossary</div>
+    <div class="cb">
+      <table>
+        <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Token</strong></td><td>Small unit of text (word, subword, or character).</td></tr>
+          <tr><td><strong>Tokenizer</strong></td><td>Algorithm that splits text into tokens.</td></tr>
+          <tr><td><strong>Token ID</strong></td><td>Integer representation of a token.</td></tr>
+          <tr><td><strong>Vocabulary</strong></td><td>List of all unique tokens known to the tokenizer.</td></tr>
+          <tr><td><strong>Embedding</strong></td><td>Dense vector representing a token.</td></tr>
+          <tr><td><strong>Embedding Matrix</strong></td><td>Lookup table mapping token IDs to vectors.</td></tr>
+          <tr><td><strong>Contextual Embedding</strong></td><td>Embedding that changes based on context.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 21. FURTHER RESOURCES -->
+  <div class="card col2">
+    <div class="ch">21. Further Resources</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="dot">Hugging Face Tokenizers Docs: <span style="color:var(--blue2)">huggingface.co/docs/tokenizers</span></li>
+        <li class="dot">Gensim (Embeddings): <span style="color:var(--blue2)">radimrehurek.com/gensim/</span></li>
+        <li class="dot">The Illustrated Word2Vec: <span style="color:var(--blue2)">jalammar.github.io/illustrated-word2vec/</span></li>
+        <li class="dot">ArXiv – BERT Paper: <span style="color:var(--blue2)">arxiv.org/abs/1810.04805</span></li>
+        <li class="dot">ArXiv – Word2Vec Paper: <span style="color:var(--blue2)">arxiv.org/abs/1301.3781</span></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-banner">
+  <strong>One-Line Summary:</strong> Tokens break text into pieces, embeddings turn those pieces into meaningful vectors, and together they are the foundation for how LLMs understand and generate text.
+</div>
+
+</div>
+</body>
+</html>

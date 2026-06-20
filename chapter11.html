@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 11: Fine-Tuning Representation Models for Classification</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Source+Code+Pro:wght@400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a2744;--navy2:#1e3060;--orange:#e8a020;--orange2:#f5b830;--blue:#2255cc;--blue2:#3366dd;--lb:#dce8ff;--lb2:#eaf0ff;--yellow:#fff3b0;--y2:#fffae0;--green:#2a7a3b;--lg:#e8f5eb;--red:#cc2222;--lr:#fdecea;--gray:#f4f6fb;--border:#b8c8e8;--text:#1a2030;--cbg:#1e2a40;--ct:#e8f0ff;--gold:#c8960c;--purple:#6633aa;--lp:#f0e8ff;--teal:#0d7070}
+body{font-family:'Nunito',sans-serif;background:#e8ecf8;color:var(--text);font-size:13px;line-height:1.5}
+.hdr{background:var(--navy);color:white;text-align:center;padding:14px 20px 10px;border-bottom:4px solid var(--orange)}
+.hdr-in{display:flex;align-items:center;justify-content:center;gap:12px}
+.hdr h1{font-size:19px;font-weight:900;line-height:1.1}
+.hdr h1 span{color:var(--orange)}
+.hdr p{font-size:11px;color:#c8d4f0;max-width:1100px;margin:3px auto 0}
+.pg{max-width:1440px;margin:0 auto;padding:7px 7px 18px;display:flex;flex-direction:column;gap:7px}
+.row{display:flex;gap:7px}
+.row>*{flex:1;min-width:0}
+.c2{flex:2}.c3{flex:3}.c15{flex:1.5}
+.card{background:white;border:1.5px solid var(--border);border-radius:7px;overflow:hidden}
+.ch{background:var(--navy);color:white;font-size:11px;font-weight:800;padding:4px 8px;text-transform:uppercase;letter-spacing:.3px}
+.ch.or{background:var(--orange);color:var(--navy)}
+.ch.gr{background:var(--green)}
+.ch.rd{background:var(--red)}
+.ch.bl{background:var(--blue2)}
+.ch.pu{background:var(--purple)}
+.ch.tl{background:var(--teal)}
+.cb{padding:8px}
+ul.ck{list-style:none}
+ul.ck li{display:flex;gap:5px;align-items:flex-start;margin-bottom:3px;font-size:11.5px}
+ul.ck li::before{content:"✅";font-size:10px;margin-top:1px;flex-shrink:0}
+ul.ck li.x::before{content:"❌"}
+ul.ck li.d::before{content:"•";font-size:13px;color:var(--navy);margin-top:0}
+ul.ck li.st::before{content:"⭐"}
+ul.ck li.ar::before{content:"➡️";font-size:9px;margin-top:2px}
+ul.ck li.wa::before{content:"⚠️"}
+.flow{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin:4px 0}
+.fn{background:var(--lb);border:1.5px solid var(--blue);border-radius:4px;padding:3px 7px;font-size:11px;font-weight:700;text-align:center}
+.fn.dk{background:var(--navy);color:white;border-color:var(--navy)}
+.fn.gn{background:var(--lg);border-color:var(--green)}
+.fn.or{background:#fff0d0;border-color:var(--orange)}
+.fn.pu{background:var(--lp);border-color:var(--purple)}
+.fn.rd{background:var(--lr);border-color:var(--red)}
+.fn.tl{background:#d0f0f0;border-color:var(--teal)}
+.fa{font-size:13px;color:#555;font-weight:900}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:var(--navy);color:white;padding:3px 6px;text-align:left;font-weight:700;font-size:10.5px}
+td{padding:3px 6px;border-bottom:1px solid #dde4f0;vertical-align:top;font-size:11px}
+tr:nth-child(even) td{background:var(--gray)}
+pre{background:var(--cbg);color:var(--ct);font-family:'Source Code Pro',monospace;font-size:10px;padding:7px 9px;border-radius:4px;overflow-x:auto;line-height:1.5;margin:3px 0;white-space:pre}
+.kw{color:#79b8ff}.str{color:#9ecbff}.cm{color:#6a8099;font-style:italic}.nm{color:#f8c555}
+.tip{background:var(--y2);border:1.5px solid var(--gold);border-radius:4px;padding:5px 7px;font-size:11px;margin-top:4px}
+.tip strong{color:var(--navy)}
+.tkw{background:var(--yellow);border:2px solid var(--gold);border-radius:5px;padding:7px;margin-top:5px;font-size:11.5px}
+.tkwt{font-weight:800;color:var(--navy);margin-bottom:2px}
+.b{font-weight:800}.sm{font-size:11px}.ti{font-size:10.5px}
+.mt3{margin-top:3px}.mt5{margin-top:5px}.mt7{margin-top:7px}
+.mb3{margin-bottom:3px}.mb5{margin-bottom:5px}
+.ct{text-align:center}
+.nv{color:var(--navy)}.gt{color:var(--green)}.rt{color:var(--red)}.ot{color:var(--orange)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.four{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.ib{border:1.5px solid var(--border);border-radius:5px;overflow:hidden;margin-top:4px}
+.ibh{background:var(--navy2);color:white;font-size:10.5px;font-weight:700;padding:3px 7px}
+.ibh.or{background:var(--orange);color:var(--navy)}
+.ibh.bl{background:var(--blue2)}
+.ibh.gn{background:var(--green)}
+.ibh.pu{background:var(--purple)}
+.ibh.rd{background:var(--red)}
+.ibh.tl{background:var(--teal)}
+.ibb{padding:6px;font-size:11px}
+.power-stack{background:var(--navy);border-radius:6px;padding:10px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:5px}
+.ps-item{background:var(--lb2);border:2px solid var(--blue);border-radius:5px;padding:6px 10px;font-size:11.5px;font-weight:800;color:var(--navy);text-align:center;min-width:80px}
+.ps-plus{color:var(--orange2);font-size:20px;font-weight:900}
+.ps-eq{color:var(--orange2);font-size:20px;font-weight:900}
+.ps-result{background:var(--orange);border-color:var(--gold);color:var(--navy)}
+.bb{background:var(--navy);color:white;padding:8px 14px;border-radius:5px;font-size:12px;text-align:center;margin-top:5px}
+.bb strong{color:var(--orange2)}
+/* graph bars */
+.bar-row{display:flex;align-items:flex-end;gap:2px;height:60px;margin:6px 0}
+.bar-seg{border-radius:2px 2px 0 0;display:flex;align-items:flex-end;justify-content:center;font-size:9px;color:white;font-weight:700;padding-bottom:2px}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-in">
+    <div style="font-size:42px">🤖</div>
+    <div>
+      <h1>CHAPTER 11: <span>FINE-TUNING REPRESENTATION MODELS FOR CLASSIFICATION</span></h1>
+      <p>Fine-tune pretrained BERT models to achieve state-of-the-art performance on classification tasks, even with limited data, and adapt them to your domain!</p>
+    </div>
+    <div style="font-size:38px">🧠</div>
+  </div>
+</div>
+
+<div class="pg">
+
+<!-- ROW 1 -->
+<div class="row">
+  <!-- 1. WHAT YOU'LL LEARN -->
+  <div class="card">
+    <div class="ch">1. What You'll Learn</div>
+    <div class="cb">
+      <ul class="ck">
+        <li>Supervised classification with fine-tuning</li>
+        <li>Freezing layers: trade-off between speed &amp; performance</li>
+        <li>Few-shot classification with SetFit</li>
+        <li>Continued pretraining with Masked Language Modeling</li>
+        <li>Named-Entity Recognition (token-level classification)</li>
+        <li>Contrastive learning &amp; loss functions</li>
+        <li>Evaluation with STSB &amp; MTEB</li>
+      </ul>
+      <div class="tkw">
+        <div class="tkwt">⭐ Key Takeaway</div>
+        Fine-tuning makes embeddings more accurate, task-specific, and powerful!
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. EMBEDDING MODELS: RECAP -->
+  <div class="card c2">
+    <div class="ch">2. Embedding Models: Recap</div>
+    <div class="cb">
+      <div class="sm mb3">Convert unstructured text → embeddings (vectors)</div>
+      <div class="flow mb5">
+        <div class="fn dk" style="font-size:10px">Text<br>(Unstructured)</div><div class="fa">→</div>
+        <div class="fn pu" style="font-size:10px">Embedding<br>Model</div><div class="fa">→</div>
+        <div style="font-family:monospace;font-size:10px;background:var(--lb2);border:1px solid var(--blue);border-radius:3px;padding:4px">
+          [-0.35, 0.21, …, 0.78]<br>
+          [0.21, 0.91, …, -0.34]<br>
+          [-0.11, 0.03, …, 0.55]
+        </div>
+      </div>
+      <div class="b sm mb3">Semantic Similarity in Vector Space</div>
+      <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:7px;font-size:11px;text-align:center;margin-bottom:5px">
+        <div style="display:flex;justify-content:space-around;margin-bottom:3px">
+          <span style="color:var(--green);font-weight:800">⚽ Sports (Green)</span>
+          <span style="color:var(--blue2);font-weight:800">💻 Technology (Blue)</span>
+          <span style="color:var(--red);font-weight:800">🍎 Food (Red)</span>
+        </div>
+        <div style="font-size:10px;color:#555">Dimension 2 vs Dimension 1 — Similar meaning → close in vector space<br>Different meaning → far apart</div>
+      </div>
+      <div class="sm gt b">Similar meaning → close in vector space</div>
+      <div class="sm rt b">Different meaning → far apart</div>
+    </div>
+  </div>
+
+  <!-- 3. FINETUNING VS FROZEN MODELS -->
+  <div class="card c2">
+    <div class="ch">3. Finetuning vs Frozen Models</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3 nv">Frozen Model (Chapter 4 Approach)</div>
+          <div class="flow" style="flex-direction:column;align-items:flex-start;gap:2px">
+            <div class="fn dk" style="font-size:10px;width:100%">Input Text</div>
+            <div class="fa">⬇</div>
+            <div style="background:var(--gray);border:1.5px solid var(--border);border-radius:4px;padding:4px;font-size:10px;font-weight:700;text-align:center;width:100%">Pretrained BERT<br><span style="color:var(--blue2)">(Frozen)</span></div>
+            <div class="fa">⬇</div>
+            <div style="background:var(--orange);color:var(--navy);border:1.5px solid var(--gold);border-radius:4px;padding:4px;font-size:10px;font-weight:700;text-align:center;width:100%">Classifier<br>(Trainable)</div>
+            <div class="fa">⬇</div>
+            <div class="fn gn" style="font-size:10px;width:100%">Prediction</div>
+          </div>
+          <div class="tip mt3">❄️ BERT weights frozen — only classifier trains</div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">Fine-Tuned Model (This Chapter)</div>
+          <div class="flow" style="flex-direction:column;align-items:flex-start;gap:2px">
+            <div class="fn dk" style="font-size:10px;width:100%">Input Text</div>
+            <div class="fa">⬇</div>
+            <div style="background:var(--orange);color:var(--navy);border:1.5px solid var(--gold);border-radius:4px;padding:4px;font-size:10px;font-weight:700;text-align:center;width:100%">BERT<br>(Trainable)</div>
+            <div class="fa">⬇</div>
+            <div style="background:var(--orange);color:var(--navy);border:1.5px solid var(--gold);border-radius:4px;padding:4px;font-size:10px;font-weight:700;text-align:center;width:100%">Classifier<br>(Trainable)</div>
+            <div class="fa">⬇</div>
+            <div class="fn gn" style="font-size:10px;width:100%">Prediction</div>
+          </div>
+          <div class="tip mt3">🔥 Backprop updates entire model!</div>
+        </div>
+      </div>
+      <div class="tip mt3">Fine-tuning both BERT and the head yields better performance!</div>
+    </div>
+  </div>
+
+  <!-- 4. BERT ARCHITECTURE OVERVIEW -->
+  <div class="card c2">
+    <div class="ch">4. BERT Architecture Overview</div>
+    <div class="cb">
+      <div class="sm mb3">Transformer Encoder + Classification Head</div>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1">
+          <div class="b sm mb3 ct">Classification Head<br>(FeedForward NN)</div>
+          <div style="font-size:18px;text-align:center">⬇</div>
+          <div class="b sm mb3 ct">BERT Encoder<br>(12 Layers)</div>
+          <div style="font-size:18px;text-align:center">⬇</div>
+          <div class="b sm mb3 ct">Token Embeddings<br>+ Position Embeddings</div>
+          <div style="font-size:18px;text-align:center">⬇</div>
+          <div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;font-size:10.5px">
+            <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 4px">[CLS]</span>
+            <span style="background:var(--blue2);color:white;border-radius:3px;padding:2px 4px">Tok 1</span>
+            <span style="background:var(--blue2);color:white;border-radius:3px;padding:2px 4px">Tok 2</span>
+            <span style="background:var(--blue2);color:white;border-radius:3px;padding:2px 4px">…</span>
+            <span style="background:var(--blue2);color:white;border-radius:3px;padding:2px 4px">Tok N</span>
+            <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 4px">[SEP]</span>
+          </div>
+          <div class="sm mt3 ct"><b>Input Tokens</b></div>
+        </div>
+        <div style="flex:1;font-size:10.5px">
+          <div class="b sm mb3">Encoder Layer (×12)</div>
+          <div class="flow" style="flex-direction:column;align-items:flex-start;gap:2px">
+            <div style="background:var(--lr);border:1px solid var(--red);border-radius:3px;padding:2px 6px;width:100%;text-align:center;font-weight:700;font-size:10px">Add &amp; Norm</div>
+            <div style="background:var(--lb);border:1px solid var(--blue);border-radius:3px;padding:2px 6px;width:100%;text-align:center;font-weight:700;font-size:10px">Feed Forward</div>
+            <div style="background:var(--lr);border:1px solid var(--red);border-radius:3px;padding:2px 6px;width:100%;text-align:center;font-weight:700;font-size:10px">Add &amp; Norm</div>
+            <div style="background:var(--lp);border:1px solid var(--purple);border-radius:3px;padding:2px 6px;width:100%;text-align:center;font-weight:700;font-size:10px">Multi-Head<br>Self-Attention</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 2 -->
+<div class="row">
+  <!-- 5. CONTRASTIVE LEARNING BASICS -->
+  <div class="card c2">
+    <div class="ch">5. Contrastive Learning Basics</div>
+    <div class="cb">
+      <div class="sm mb3">Teach the model what is similar vs different.</div>
+      <div class="two">
+        <div>
+          <div class="b sm mb3 gt">Positive Pair (Similar)</div>
+          <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:4px;padding:6px;font-size:11px;margin-bottom:4px">
+            Q: "How many people live in Amsterdam?"<br>
+            A: "Almost a million people live in Amsterdam."
+          </div>
+          <div style="font-size:18px;text-align:center">✅</div>
+        </div>
+        <div>
+          <div class="b sm mb3 rt">Hard Negative (Dissimilar)</div>
+          <div style="background:var(--lr);border:1.5px solid var(--red);border-radius:4px;padding:6px;font-size:11px;margin-bottom:4px">
+            Q: "How many people live in Amsterdam?"<br>
+            A: "More than a million people live in Utrecht."
+          </div>
+          <div style="font-size:18px;text-align:center">❌</div>
+        </div>
+      </div>
+      <div class="tip mt5">Contrastive learning pulls similar pairs together and pushes apart pairs in vector space.</div>
+    </div>
+  </div>
+
+  <!-- 6. LOSS FUNCTIONS OVERVIEW -->
+  <div class="card c2">
+    <div class="ch">6. Loss Functions Overview</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3 nv">Cosine Similarity Loss</div>
+          <div class="sm mb3">(For similarity score 0 to 1)</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:11px;text-align:center">
+            Minimize: [cos(a, b) − label]²
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;margin:5px 0;font-size:11px;justify-content:center">
+            <div style="background:var(--blue2);color:white;border-radius:3px;padding:2px 5px;font-size:10px">A</div>
+            <div style="font-weight:800;color:var(--navy)">→ 0.85 ←</div>
+            <div style="background:var(--green);color:white;border-radius:3px;padding:2px 5px;font-size:10px">P</div>
+          </div>
+          <ul class="ck">
+            <li>Intuitive</li>
+            <li>Works with soft similarity scores</li>
+            <li>Good for STS tasks</li>
+          </ul>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">Multiple Negatives Ranking Loss</div>
+          <div class="sm mb3">(InfoNCE / NTXent)</div>
+          <div class="sm mb3">Compare anchor to many in-batch negatives</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:10.5px;text-align:center">
+            Anchor (A) → Positive (P) + Negatives (N₁, N₂…)
+          </div>
+          <ul class="ck mt3">
+            <li>Requires large batch</li>
+            <li>Strong performance</li>
+            <li>Most commonly used</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. DATA FOR TRAINING (NLI) -->
+  <div class="card c2">
+    <div class="ch">7. Data for Training (NLI)</div>
+    <div class="cb">
+      <div class="sm mb3">Use NLI datasets to create pairs.</div>
+      <table style="margin-bottom:6px">
+        <thead><tr><th>Label</th><th>Meaning</th><th>Similarity Score</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td><b>0</b></td><td>Entailment</td><td>High (1.0)</td><td>Positive Pair</td></tr>
+          <tr><td><b>1</b></td><td>Neutral</td><td>Low (0.0)</td><td>Negative Pair</td></tr>
+          <tr><td><b>2</b></td><td>Contradiction</td><td>Low (0.0)</td><td>Negative Pair</td></tr>
+        </tbody>
+      </table>
+      <div class="b sm mb3">Premise:</div>
+      <div style="background:var(--lb2);border:1px solid var(--blue);border-radius:4px;padding:5px;font-size:11px;margin-bottom:4px">"He is in the cinema watching Coco."</div>
+      <div class="b sm mb3">Entailment:</div>
+      <div style="background:var(--lg);border:1px solid var(--green);border-radius:4px;padding:5px;font-size:11px;margin-bottom:4px">"In the movie theater he is watching the Disney movie Coco." ✅</div>
+      <div class="b sm mb3">Contradiction:</div>
+      <div style="background:var(--lr);border:1px solid var(--red);border-radius:4px;padding:5px;font-size:11px">"He is watching Frozen at home." ❌</div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 3 -->
+<div class="row">
+  <!-- 8. SUPERVISED CLASSIFICATION: FINE-TUNING PIPELINE -->
+  <div class="card c2">
+    <div class="ch">8. Supervised Classification: Fine-Tuning Pipeline</div>
+    <div class="cb">
+      <div class="sm mb3">Fine-tuning BERT end-to-end.</div>
+      <div class="flow mb4">
+        <div class="fn dk" style="font-size:10px">(Labeled)</div><div class="fa">→</div>
+        <div class="fn" style="font-size:10px">Tokenizer</div><div class="fa">→</div>
+        <div class="fn pu" style="font-size:10px">BERT<br>Encoder</div><div class="fa">→</div>
+        <div class="fn or" style="font-size:10px">Classification<br>Head</div><div class="fa">→</div>
+        <div class="fn gn" style="font-size:10px">Prediction</div>
+      </div>
+      <div class="b sm mb3">Key Steps</div>
+      <ol style="list-style:none;padding:0">
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">1</span>Load &amp; preprocess data</li>
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">2</span>Tokenize inputs</li>
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">3</span>Define model (BERT + head)</li>
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">4</span>Choose loss (e.g., MNR or Cosine Similarity Loss)</li>
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">5</span>Train with Trainer</li>
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">6</span>Evaluate (F1, Accuracy, etc.)</li>
+      </ol>
+      <div class="ib mt3">
+        <div class="ibh">Training Arguments (Examples)</div>
+        <div class="ibb">
+          <ul class="ck">
+            <li class="d">learning_rate = 2e-5</li>
+            <li class="d">batch_size = 16 or 32</li>
+            <li class="d">num_epochs = 1 – 3</li>
+            <li class="d">fp16 = True</li>
+            <li class="d">eval_steps = 100</li>
+            <li class="d">weight_decay = 0.01</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tip mt3">Fine-tuning all layers usually gives the best results!</div>
+    </div>
+  </div>
+
+  <!-- 9. FREEZING LAYERS: SPEED VS PERFORMANCE -->
+  <div class="card c2">
+    <div class="ch">9. Freezing Layers: Speed vs Performance</div>
+    <div class="cb">
+      <div class="sm mb3">Freeze some layers to reduce compute.</div>
+      <div class="two mb4">
+        <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:6px;font-size:11px">
+          <div class="b mb3 rt">Freeze Many Layers</div>
+          <ul class="ck">
+            <li>Fast training</li>
+            <li>Less compute</li>
+            <li class="x">Lower performance</li>
+          </ul>
+        </div>
+        <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:4px;padding:6px;font-size:11px">
+          <div class="b mb3 gt">Train More Layers</div>
+          <ul class="ck">
+            <li>Slower training</li>
+            <li>More compute</li>
+            <li>Higher performance</li>
+          </ul>
+        </div>
+      </div>
+      <div class="sm mb3">F1 Score vs # Trainable Encoder Layers</div>
+      <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:8px;font-size:11px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span class="b">F1 Score</span>
+          <span class="b">1.0</span>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:8px;height:50px">
+          <div style="width:20px;background:var(--red);border-radius:2px 2px 0 0;height:25px;display:flex;align-items:flex-end;justify-content:center;font-size:9px;color:white;padding-bottom:1px">0.4</div>
+          <div style="font-size:10px;color:var(--navy);flex:1">
+            ← Sweet Spot (Good trade-off)<br>
+            ← Best (All layers)
+          </div>
+        </div>
+        <div style="font-size:10px;color:#555;margin-top:3px">0 (Only Head) → 2 → 4 → 6 → 8 → 10 → (All)</div>
+        <div style="font-size:10px;color:#555"># Trainable Encoder Layers</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. FEW-SHOT CLASSIFICATION WITH SETFIT -->
+  <div class="card c2">
+    <div class="ch">10. Few-Shot Classification with SetFit</div>
+    <div class="cb">
+      <div class="sm mb3">High performance with very few labeled examples.</div>
+      <div class="b sm mb3">SetFit 3-Step Process</div>
+      <div class="three mb4">
+        <div style="text-align:center;font-size:11px;border:1.5px solid var(--border);border-radius:4px;padding:5px;background:var(--gray)">
+          <div style="font-size:18px;margin-bottom:3px">1️⃣</div>
+          <b>Sample Pairs</b><br>
+          From few labeled examples, create positive (in-class) and negative (out-class) pairs.
+        </div>
+        <div style="text-align:center;font-size:11px;border:1.5px solid var(--orange);border-radius:4px;padding:5px;background:#fff0d0">
+          <div style="font-size:18px;margin-bottom:3px">2️⃣</div>
+          <b>Fine-Tune ST Model</b><br>
+          Fine-tune a SentenceTransformer model using contrastive learning.
+        </div>
+        <div style="text-align:center;font-size:11px;border:1.5px solid var(--green);border-radius:4px;padding:5px;background:var(--lg)">
+          <div style="font-size:18px;margin-bottom:3px">3️⃣</div>
+          <b>Train Classifier</b><br>
+          Use embeddings to train a simple classifier (e.g., Logistic Regression).
+        </div>
+      </div>
+      <div class="b sm mb3">Why SetFit?</div>
+      <ul class="ck">
+        <li>Works with as few as 8–16 examples per class!</li>
+        <li>Much faster than full fine-tuning</li>
+        <li>Competitive with full fine-tuning on large data</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 4 -->
+<div class="row">
+  <!-- 11. CONTINUED PRETRAINING WITH MLM -->
+  <div class="card c2">
+    <div class="ch">11. Continued Pretraining with MLM</div>
+    <div class="cb">
+      <div class="sm mb3">Adapt the model to your domain.</div>
+      <div class="two">
+        <div>
+          <div class="b sm mb3 nv">Step 1: Pretrained BERT (General Domain)</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:6px;font-size:11px;margin-bottom:5px">
+            "I man is playing guitar." →<br>
+            Predict masked [MASK]<br>
+            using domain text
+          </div>
+          <div style="font-size:11px;text-align:center">Score: 0.72</div>
+          <div class="sm mt3">Metric: Pearson / Spearman (Cosine)</div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">Step 2: Continue Pretraining (Masked Language Modeling)</div>
+          <div style="background:var(--orange);color:var(--navy);border:1.5px solid var(--gold);border-radius:4px;padding:6px;font-size:11px;margin-bottom:5px">
+            → Predict masked [MASK]<br>
+            using domain text
+          </div>
+          <div style="font-size:11px;text-align:center">Classification · Clustering · Retrieval · STS · Reranking …</div>
+        </div>
+      </div>
+      <div class="tip mt3">Comprehensive leaderboard for embedding models!</div>
+    </div>
+  </div>
+
+  <!-- 12. NAMED-ENTITY RECOGNITION (NER) -->
+  <div class="card c2">
+    <div class="ch">12. Named-Entity Recognition (NER)</div>
+    <div class="cb">
+      <div class="sm mb3">Token-level classification.</div>
+      <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:7px;font-size:11.5px;margin-bottom:5px">
+        <b>Input Sentence</b><br>
+        My name is Maarten.
+      </div>
+      <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:5px;font-size:11px">
+        <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 5px">[CLS]</span>
+        <span style="background:var(--lb);border:1px solid var(--blue);border-radius:3px;padding:2px 5px">My</span>
+        <span style="background:var(--lb);border:1px solid var(--blue);border-radius:3px;padding:2px 5px">name</span>
+        <span style="background:var(--lb);border:1px solid var(--blue);border-radius:3px;padding:2px 5px">is</span>
+        <span style="background:var(--lb);border:1px solid var(--blue);border-radius:3px;padding:2px 5px">##arte</span>
+        <span style="background:var(--lb);border:1px solid var(--blue);border-radius:3px;padding:2px 5px">##n</span>
+        <span style="background:var(--lb);border:1px solid var(--blue);border-radius:3px;padding:2px 5px">.</span>
+        <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 5px">[SEP]</span>
+      </div>
+      <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:5px;font-size:10.5px">
+        <span style="background:var(--gray);border-radius:3px;padding:2px 5px">O</span>
+        <span style="background:var(--gray);border-radius:3px;padding:2px 5px">O</span>
+        <span style="background:var(--gray);border-radius:3px;padding:2px 5px">O</span>
+        <span style="background:var(--gray);border-radius:3px;padding:2px 5px">O</span>
+        <span style="background:var(--orange);color:var(--navy);border-radius:3px;padding:2px 5px;font-weight:800">B-PER</span>
+        <span style="background:var(--orange);color:var(--navy);border-radius:3px;padding:2px 5px;font-weight:800">I-PER</span>
+        <span style="background:var(--orange);color:var(--navy);border-radius:3px;padding:2px 5px;font-weight:800">I-PER</span>
+        <span style="background:var(--gray);border-radius:3px;padding:2px 5px">O</span>
+      </div>
+      <div class="b sm mb3">Labels (Labels)</div>
+      <div class="b sm mb3">Entity Types</div>
+      <div class="two">
+        <ul class="ck">
+          <li class="d"><b>PER:</b> Person</li>
+          <li class="d"><b>ORG:</b> Organization</li>
+          <li class="d"><b>LOC:</b> Location</li>
+        </ul>
+        <ol style="list-style:none;padding:0">
+          <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11px"><span style="background:var(--navy);color:white;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0">1</span>Tokenize &amp; align labels</li>
+          <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11px"><span style="background:var(--navy);color:white;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0">2</span>Use token-classification head on BERT</li>
+          <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11px"><span style="background:var(--navy);color:white;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0">3</span>Process: Miscellanous (Ditti Hasenfratz)</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13. LOSS FOR NER: TOKEN CLASSIFICATION -->
+  <div class="card c15">
+    <div class="ch">13. Loss for NER: Token Classification</div>
+    <div class="cb">
+      <div class="sm mb3">Cross-entropy loss on each token.</div>
+      <div class="flow mb4" style="flex-direction:column;align-items:flex-start;gap:2px">
+        <div class="fn pu" style="width:100%;font-size:10px">BERT Encoder</div>
+        <div class="fa">⬇</div>
+        <div class="fn or" style="width:100%;font-size:10px">Token-Level Classifier (Linear Layer)</div>
+        <div class="fa">⬇</div>
+        <div class="fn gn" style="width:100%;font-size:10px">Predictions (per token)</div>
+      </div>
+      <div style="display:flex;gap:3px;flex-wrap:wrap;font-size:10.5px;margin-top:3px">
+        <span style="background:var(--gray);border-radius:3px;padding:2px 5px">O</span>
+        <span style="background:var(--gray);border-radius:3px;padding:2px 5px">O</span>
+        <span style="background:var(--gray);border-radius:3px;padding:2px 5px">O</span>
+        <span style="background:var(--gray);border-radius:3px;padding:2px 5px">O</span>
+        <span style="background:var(--orange);color:var(--navy);border-radius:3px;padding:2px 5px;font-weight:800">B-PER</span>
+        <span style="background:var(--orange);color:var(--navy);border-radius:3px;padding:2px 5px;font-weight:800">I-PER</span>
+        <span style="background:var(--gray);border-radius:3px;padding:2px 5px">O</span>
+      </div>
+      <div class="tip mt3">Ignore special tokens ([CLS], [SEP]) with label = −100 in loss.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 5 -->
+<div class="row">
+  <!-- 14. EVALUATION -->
+  <div class="card c2">
+    <div class="ch">14. Evaluation</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3 nv">STSB (Semantic Textual Similarity)</div>
+          <div class="sm mb3">Human-rated similarity (0–1)</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:11px;text-align:center">
+            "A man is playing guitar." ≈ "A person plays the guitar."<br>
+            <b>Score: 0.72</b>
+          </div>
+          <div class="sm mt3">Metric: Pearson / Spearman (Cosine)</div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">MTEB (Massive Text Embedding Benchmark)</div>
+          <div class="sm mb3">8 tasks · 58 datasets · 112 languages</div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap">
+            <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 5px;font-size:10px">Classification</span>
+            <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 5px;font-size:10px">Clustering</span>
+            <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 5px;font-size:10px">Retrieval</span>
+            <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 5px;font-size:10px">STS</span>
+            <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 5px;font-size:10px">Reranking</span>
+          </div>
+          <div class="sm mt3">Comprehensive leaderboard for embedding models!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 15. HANDS-ON CODE SNAPSHOT -->
+  <div class="card c3">
+    <div class="ch">15. Hands-On Code Snapshot</div>
+    <div class="cb">
+      <div class="three">
+        <div>
+          <div class="b sm mb3">Load &amp; Tokenize</div>
+<pre><span class="kw">from</span> transformers <span class="kw">import</span> AutoTokenizer
+<span class="kw">from</span> transformers <span class="kw">import</span> Trainer,
+    TrainingArguments
+
+tokenizer = AutoTokenizer.from_pretrained(
+    <span class="str">'bert-base-cased'</span>)
+
+inputs = tokenizer(texts,
+    padding=<span class="kw">True</span>,
+    truncation=<span class="kw">True</span>,
+    return_tensors=<span class="str">'pt'</span>)</pre>
+        </div>
+        <div>
+          <div class="b sm mb3">Fine-Tune with Trainer</div>
+<pre>trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=train_ds,
+    eval_dataset=eval_ds,
+    compute_metrics=
+      compute_metrics
+)
+<span class="cm"># {'eval_f1': 0.95,</span>
+<span class="cm">#  'eval_loss': 0.36, …}</span></pre>
+        </div>
+        <div>
+          <div class="b sm mb3">Evaluate</div>
+<pre>trainer.evaluate()
+<span class="cm"># {'eval_f1': 0.95,</span>
+<span class="cm">#  'eval_loss': 0.36, …}</span></pre>
+          <div class="tip mt3">Transformers + Datasets + Trainer = Powerful NLP!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 16. BEST PRACTICES & TIPS -->
+  <div class="card">
+    <div class="ch or">16. Best Practices &amp; Tips</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="st">Use the best pretrained model available</li>
+        <li class="st">Collect high-quality labeled data</li>
+        <li class="st">Use hard negatives when possible</li>
+        <li class="st">Monitor metrics to avoid overfitting</li>
+        <li class="st">Try different losses and batch sizes</li>
+        <li class="st">Evaluate on STSB &amp; multiple tasks</li>
+        <li class="st">Save &amp; version your models</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 6: KEY TAKEAWAYS + POWER STACK -->
+<div class="row">
+  <!-- KEY TAKEAWAYS -->
+  <div class="card c2">
+    <div class="ch or">Key Takeaways</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="st">Fine-tuning outperforms frozen models.</li>
+        <li class="st">Contrastive learning is key to embeddings.</li>
+        <li class="st">SetFit enables few-shot success.</li>
+        <li class="st">MLM adapts models to your domain.</li>
+        <li class="st">NER works at the token level.</li>
+        <li class="st">Evaluate well — trust the metrics!</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- EMBEDDING POWER STACK -->
+  <div class="card c3">
+    <div class="ch or">The Embedding Power Stack</div>
+    <div class="cb">
+      <div class="power-stack">
+        <div class="ps-item">📊<br>Data<br><span style="font-size:10px;font-weight:400">(Raw Text)</span></div>
+        <div class="ps-plus">+</div>
+        <div class="ps-item">🤖<br>Pretrained<br>Model (BERT)<br></div>
+        <div class="ps-plus">+</div>
+        <div class="ps-item">🔄<br>Training<br><span style="font-size:10px;font-weight:400">(Contrastive/MLM)</span></div>
+        <div class="ps-plus">+</div>
+        <div class="ps-item">📏<br>Evaluation<br><span style="font-size:10px;font-weight:400">(Metrics/Benchmarks)</span></div>
+        <div class="ps-eq">=</div>
+        <div class="ps-item ps-result">⭐<br>Powerful<br>Embeddings</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 18. WHAT'S NEXT? -->
+  <div class="card">
+    <div class="ch or">18. What's Next?</div>
+    <div class="cb">
+      <div style="font-size:12.5px;font-weight:700;color:var(--navy);line-height:1.6">
+        In Chapter 12, we take embeddings further into generative models, quantization, and efficient LLM fine-tuning (LoRA, QLoRA, PEFT)!
+      </div>
+      <div style="text-align:center;font-size:32px;margin-top:8px">🚀</div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

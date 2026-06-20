@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 12: Fine-Tuning Generation Models</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Source+Code+Pro:wght@400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a2744;--navy2:#1e3060;--orange:#e8a020;--orange2:#f5b830;--blue:#2255cc;--blue2:#3366dd;--lb:#dce8ff;--lb2:#eaf0ff;--yellow:#fff3b0;--y2:#fffae0;--green:#2a7a3b;--lg:#e8f5eb;--red:#cc2222;--lr:#fdecea;--gray:#f4f6fb;--border:#b8c8e8;--text:#1a2030;--cbg:#1e2a40;--ct:#e8f0ff;--gold:#c8960c;--purple:#6633aa;--lp:#f0e8ff;--teal:#0d7070}
+body{font-family:'Nunito',sans-serif;background:#e8ecf8;color:var(--text);font-size:13px;line-height:1.5}
+.hdr{background:var(--navy);color:white;text-align:center;padding:14px 20px 10px;border-bottom:4px solid var(--orange)}
+.hdr-in{display:flex;align-items:center;justify-content:center;gap:12px}
+.hdr h1{font-size:20px;font-weight:900;line-height:1.1}
+.hdr h1 span{color:var(--orange)}
+.hdr p{font-size:11px;color:#c8d4f0;max-width:1100px;margin:3px auto 0}
+.pg{max-width:1440px;margin:0 auto;padding:7px 7px 18px;display:flex;flex-direction:column;gap:7px}
+.row{display:flex;gap:7px}
+.row>*{flex:1;min-width:0}
+.c2{flex:2}.c3{flex:3}.c15{flex:1.5}
+.card{background:white;border:1.5px solid var(--border);border-radius:7px;overflow:hidden}
+.ch{background:var(--navy);color:white;font-size:11px;font-weight:800;padding:4px 8px;text-transform:uppercase;letter-spacing:.3px}
+.ch.or{background:var(--orange);color:var(--navy)}
+.ch.gr{background:var(--green)}
+.ch.rd{background:var(--red)}
+.ch.bl{background:var(--blue2)}
+.ch.pu{background:var(--purple)}
+.ch.tl{background:var(--teal)}
+.cb{padding:8px}
+ul.ck{list-style:none}
+ul.ck li{display:flex;gap:5px;align-items:flex-start;margin-bottom:3px;font-size:11.5px}
+ul.ck li::before{content:"✅";font-size:10px;margin-top:1px;flex-shrink:0}
+ul.ck li.x::before{content:"❌"}
+ul.ck li.d::before{content:"•";font-size:13px;color:var(--navy);margin-top:0}
+ul.ck li.st::before{content:"⭐"}
+ul.ck li.ar::before{content:"➡️";font-size:9px;margin-top:2px}
+.flow{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin:4px 0}
+.fn{background:var(--lb);border:1.5px solid var(--blue);border-radius:4px;padding:3px 7px;font-size:11px;font-weight:700;text-align:center}
+.fn.dk{background:var(--navy);color:white;border-color:var(--navy)}
+.fn.gn{background:var(--lg);border-color:var(--green)}
+.fn.or{background:#fff0d0;border-color:var(--orange)}
+.fn.pu{background:var(--lp);border-color:var(--purple)}
+.fn.rd{background:var(--lr);border-color:var(--red)}
+.fa{font-size:13px;color:#555;font-weight:900}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:var(--navy);color:white;padding:3px 6px;text-align:left;font-weight:700;font-size:10.5px}
+td{padding:3px 6px;border-bottom:1px solid #dde4f0;vertical-align:top;font-size:11px}
+tr:nth-child(even) td{background:var(--gray)}
+pre{background:var(--cbg);color:var(--ct);font-family:'Source Code Pro',monospace;font-size:10px;padding:7px 9px;border-radius:4px;overflow-x:auto;line-height:1.5;margin:3px 0;white-space:pre}
+.kw{color:#79b8ff}.str{color:#9ecbff}.cm{color:#6a8099;font-style:italic}.nm{color:#f8c555}
+.tip{background:var(--y2);border:1.5px solid var(--gold);border-radius:4px;padding:5px 7px;font-size:11px;margin-top:4px}
+.tip strong{color:var(--navy)}
+.tkw{background:var(--yellow);border:2px solid var(--gold);border-radius:5px;padding:7px;margin-top:5px;font-size:11.5px}
+.tkwt{font-weight:800;color:var(--navy);margin-bottom:2px}
+.b{font-weight:800}.sm{font-size:11px}.ti{font-size:10.5px}
+.mt3{margin-top:3px}.mt5{margin-top:5px}
+.mb3{margin-bottom:3px}.mb5{margin-bottom:5px}
+.ct{text-align:center}
+.nv{color:var(--navy)}.gt{color:var(--green)}.rt{color:var(--red)}.ot{color:var(--orange)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.four{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.ib{border:1.5px solid var(--border);border-radius:5px;overflow:hidden;margin-top:4px}
+.ibh{background:var(--navy2);color:white;font-size:10.5px;font-weight:700;padding:3px 7px}
+.ibh.or{background:var(--orange);color:var(--navy)}
+.ibh.bl{background:var(--blue2)}
+.ibh.gn{background:var(--green)}
+.ibh.pu{background:var(--purple)}
+.ibh.rd{background:var(--red)}
+.ibh.tl{background:var(--teal)}
+.ibb{padding:6px;font-size:11px}
+.bb{background:var(--navy);color:white;padding:8px 14px;border-radius:5px;font-size:12px;text-align:center;margin-top:5px}
+.bb strong{color:var(--orange2)}
+/* matrix visual */
+.mat-cell{width:22px;height:22px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;margin:1px}
+/* workflow arrow */
+.wf-step{background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:5px 8px;font-size:11px;font-weight:700;text-align:center;flex:1}
+.wf-arrow{font-size:18px;color:var(--navy);font-weight:900;align-self:center}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-in">
+    <div style="font-size:42px">🤖</div>
+    <div>
+      <h1>CHAPTER 12: <span>FINE-TUNING GENERATION MODELS</span></h1>
+      <p>Adapt pretrained LLMs to follow instructions and human preferences using Supervised Fine-Tuning and Preference Tuning.</p>
+    </div>
+    <div style="font-size:38px">🧠</div>
+  </div>
+</div>
+
+<div class="pg">
+
+<!-- ROW 1: THE BIG PICTURE + BASE vs INSTRUCTION-TUNED -->
+<div class="row">
+  <!-- 1. THE BIG PICTURE: THREE STEPS TO A GREAT LLM -->
+  <div class="card c2">
+    <div class="ch">1. The Big Picture: Three Steps to a Great LLM</div>
+    <div class="cb">
+      <div class="three">
+        <div style="border:1.5px solid var(--border);border-radius:5px;padding:7px;background:var(--lb2)">
+          <div style="background:var(--navy);color:white;border-radius:4px;padding:3px 7px;font-size:11px;font-weight:800;text-align:center;margin-bottom:4px">① Pretraining<br>(Language Modeling)</div>
+          <div class="sm">Train on massive unlabeled text to predict the next token.</div>
+          <div class="sm mt3 gt b">Self-supervised.</div>
+          <div style="background:var(--lb);border:1px solid var(--blue);border-radius:4px;padding:5px;font-size:10.5px;margin-top:4px">
+            <b>Input</b><br>The cat sat<br><b>Next Token</b><br>→ the
+          </div>
+          <div class="fn dk mt3" style="font-size:10px">Output: Base Model (Foundation Model)</div>
+        </div>
+        <div style="border:1.5px solid var(--border);border-radius:5px;padding:7px;background:var(--lg)">
+          <div style="background:var(--green);color:white;border-radius:4px;padding:3px 7px;font-size:11px;font-weight:800;text-align:center;margin-bottom:4px">② Supervised Fine-Tuning (SFT)</div>
+          <div class="sm">Fine-tune on instruction (or task) data. Model learns to follow instructions.</div>
+          <div style="background:var(--lb);border:1px solid var(--blue);border-radius:4px;padding:5px;font-size:10.5px;margin-top:4px">
+            <b>Input (Instruction):</b> Summarize…<br>
+            <b>Output (Response):</b> —
+          </div>
+          <div class="fn gn mt3" style="font-size:10px">Output: Instruction-Tuned Model</div>
+        </div>
+        <div style="border:1.5px solid var(--border);border-radius:5px;padding:7px;background:#fff0d0">
+          <div style="background:var(--orange);color:var(--navy);border-radius:4px;padding:3px 7px;font-size:11px;font-weight:800;text-align:center;margin-bottom:4px">③ Preference Tuning<br>(Alignment / RLHF)</div>
+          <div class="sm">Align model outputs with human preferences using reward modeling and optimization.</div>
+          <div style="background:var(--lb);border:1px solid var(--blue);border-radius:4px;padding:5px;font-size:10.5px;margin-top:4px">
+            <b>Input:</b> Preferred vs. Less (Two Responses)<br>
+            ✅ vs ❌
+          </div>
+          <div class="fn or mt3" style="font-size:10px">Output: Aligned (Model)</div>
+        </div>
+      </div>
+      <div class="tip mt5">From a general language model → to a helpful, honest, and harmless assistant.</div>
+      <div class="tip mt3">SFT teaches models to follow instructions and provide useful answers.</div>
+    </div>
+  </div>
+
+  <!-- 2. BASE MODEL VS INSTRUCTION-TUNED MODEL -->
+  <div class="card c2">
+    <div class="ch">2. Base Model vs. Instruction-Tuned Model</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3 nv">Base / Pretrained LLM</div>
+          <div class="sm mb3">Completes text, doesn't follow instructions.</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:6px;font-size:11px;margin-bottom:4px">
+            <b>Q: What is an LLM?</b><br><br>
+            → It is a large language model…<br>
+            …What is deep learning?<br>
+            …\
+          </div>
+          <div class="fn dk" style="font-size:10px">Fine-tune with instructions</div>
+          <div style="font-size:18px;text-align:center;color:var(--navy);margin:3px 0">⬇</div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">Instruction-Tuned LLM</div>
+          <div class="sm mb3">Follows instructions and answers the question.</div>
+          <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:5px;padding:6px;font-size:11px;margin-bottom:4px">
+            <b>Q: What is an LLM?</b><br><br>
+            A large language model (LLM) is a type of AI model trained on massive text data to understand and generate human-like text. ✅
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 2 -->
+<div class="row">
+  <!-- 3. SUPERVISED FINE-TUNING (SFT) OVERVIEW -->
+  <div class="card c2">
+    <div class="ch">3. Supervised Fine-Tuning (SFT) Overview</div>
+    <div class="cb">
+      <div class="sm mb3">Train on (instruction, response) pairs with next-token prediction.</div>
+      <div class="flow mb4">
+        <div class="fn or" style="font-size:10px">Instruction<br>(Inputs)</div><div class="fa">→</div>
+        <div class="fn pu" style="font-size:10px">LLM<br>(Trainable)</div><div class="fa">→</div>
+        <div class="fn gn" style="font-size:10px">Response<br>(Target Tokens)</div>
+      </div>
+      <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:6px;font-size:11px;margin-bottom:5px">
+        <b>During training:</b> Predict next token in the response given the instruction + previous tokens.
+      </div>
+      <div style="background:var(--lr);border:1.5px solid var(--red);border-radius:4px;padding:6px;font-size:11px">
+        <b>Loss: Cross-Entropy</b><br>(Compare predicted vs. actual next token)
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. FULL FINE-TUNING vs PEFT -->
+  <div class="card c2">
+    <div class="ch">4. Full Fine-Tuning vs. PEFT (Parameter-Efficient FT)</div>
+    <div class="cb">
+      <div class="two">
+        <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:7px">
+          <div class="b sm mb3 nv">Full Fine-Tuning</div>
+          <div class="sm mb3">Update ALL model parameters.</div>
+          <ul class="ck">
+            <li>Maximum performance</li>
+            <li class="x">High compute &amp; memory</li>
+            <li class="x">Slower training</li>
+            <li class="x">Larger checkpoints</li>
+          </ul>
+        </div>
+        <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:5px;padding:7px">
+          <div class="b sm mb3 gt">PEFT (e.g., LoRA, Adapters)</div>
+          <div class="sm mb3">Update a small subset of parameters.</div>
+          <ul class="ck">
+            <li>Much less compute &amp; memory</li>
+            <li>Faster training</li>
+            <li>Smaller checkpoints</li>
+            <li class="x">Slightly lower performance (usually)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tkw mt3">
+        <div class="tkwt">⭐</div>
+        PEFT methods get great results at a fraction of the cost!
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. INSTRUCTION DATA FORMAT (CHAT TEMPLATE) -->
+  <div class="card c2">
+    <div class="ch">5. Instruction Data Format (Chat Template)</div>
+    <div class="cb">
+      <div class="sm mb3">Typical chat template used in this chapter.</div>
+      <div style="background:var(--cbg);color:var(--ct);font-family:monospace;font-size:10.5px;padding:8px;border-radius:5px;line-height:1.8">
+        <span style="color:#79b8ff">&lt;|system|&gt;</span><br>
+        You are a helpful assistant.<span style="color:#6a8099">&lt;/s&gt;</span><br><br>
+        <span style="color:#9ecbff">&lt;|user|&gt;</span><br>
+        Explain what overfitting is.<span style="color:#6a8099">&lt;/s&gt;</span><br><br>
+        <span style="color:#b3d9ff">&lt;|assistant|&gt;</span><br>
+        Overfitting happens when a model learns the training data too well…<span style="color:#6a8099">&lt;/s&gt;</span><br><br>
+        <span style="color:#9ecbff">&lt;|user|&gt;</span><br>
+        Give an example.<span style="color:#6a8099">&lt;/s&gt;</span><br><br>
+        <span style="color:#b3d9ff">&lt;|assistant|&gt;</span><br>
+        A model memorizes training data but performs poorly on new data…<span style="color:#6a8099">&lt;/s&gt;</span>
+      </div>
+      <div class="sm mt3">
+        <b>Key:</b> <span style="background:var(--navy);color:white;padding:1px 5px;border-radius:3px;font-size:10px">&lt;|user|&gt;</span> = human &nbsp;
+        <span style="background:var(--navy);color:white;padding:1px 5px;border-radius:3px;font-size:10px">&lt;|assistant|&gt;</span> = model &nbsp;
+        <span style="background:var(--navy);color:white;padding:1px 5px;border-radius:3px;font-size:10px">&lt;/s&gt;</span> = end of turn
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 3 -->
+<div class="row">
+  <!-- 6. SUPERVISED FINE-TUNING PIPELINE (EXAMPLE) -->
+  <div class="card c2">
+    <div class="ch">6. Supervised Fine-Tuning Pipeline (Example)</div>
+    <div class="cb">
+      <div class="sm mb3">Example with TinyLlama using Hugging Face stack.</div>
+      <div class="flow mb4">
+        <div style="text-align:center;font-size:11px"><div style="font-size:18px">📁</div><b>1</b><br>Data<br>(Instructions)</div>
+        <div class="fa">→</div>
+        <div style="text-align:center;font-size:11px"><div style="font-size:18px">🔤</div><b>2</b><br>Tokenize<br>&amp; Template</div>
+        <div class="fa">→</div>
+        <div style="text-align:center;font-size:11px"><div style="font-size:18px">🤖</div><b>3</b><br>Load<br>Pretrained<br>Model</div>
+        <div class="fa">→</div>
+        <div style="text-align:center;font-size:11px"><div style="font-size:18px">🔧</div><b>4</b><br>Fine-Tune<br>(SFT / LoRA)</div>
+        <div class="fa">→</div>
+        <div style="text-align:center;font-size:11px"><div style="font-size:18px">✅</div><b>5</b><br>Aligned<br>Chat Model</div>
+      </div>
+      <div class="b sm mb3">Key Steps</div>
+      <ol style="list-style:none;padding:0">
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">1</span>Prepare instruction-response data.</li>
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">2</span>Apply chat template &amp; tokenize</li>
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">3</span>Load base model (e.g., TinyLlama)</li>
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">4</span>Fine-tune with next-token prediction</li>
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">5</span>Save adapter or full model</li>
+      </ol>
+      <div class="ib mt3">
+        <div class="ibh">Common Training Args</div>
+        <div class="ibb">
+          <ul class="ck">
+            <li class="d">learning_rate: 2e–5 (typical)</li>
+            <li class="d">batch_size: 2–16 (GPU dependent)</li>
+            <li class="d">num_epochs: 1–3</li>
+            <li class="d">warmup_ratio: 0.03–0.1</li>
+            <li class="d">fp16 / bf16: True</li>
+            <li class="d">gradient_checkpointing: True</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tip mt3">Fine-tuning on instructions teaches the model how to chat and follow requests.</div>
+    </div>
+  </div>
+
+  <!-- 7. PREFERENCE TUNING (ALIGNMENT) -->
+  <div class="card c2">
+    <div class="ch">7. Preference Tuning (Alignment)</div>
+    <div class="cb">
+      <div class="sm mb3">Align outputs with human preferences.</div>
+      <div class="flow mb4">
+        <div class="fn dk" style="font-size:10px">Prompt</div><div class="fa">→</div>
+        <div class="fn pu" style="font-size:10px">LLM</div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-left:4px">
+          <div class="fn" style="font-size:10px">Response A</div>
+          <div class="fn" style="font-size:10px">Response B</div>
+        </div>
+        <div class="fa">→</div>
+        <div style="font-size:11px;text-align:center">
+          Human Judge /<br>Reward Model<br>
+          <span style="font-size:16px">✅ ❌</span>
+        </div>
+      </div>
+      <div class="b sm mb3">Two main approaches</div>
+      <div class="two">
+        <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:6px">
+          <div class="b sm mb3 nv">RLHF (PPO)</div>
+          <ol style="list-style:none;padding:0">
+            <li style="display:flex;gap:4px;margin-bottom:3px;font-size:11px"><span style="background:var(--blue2);color:white;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0">1</span>Train Reward Model (on human preferences)</li>
+            <li style="display:flex;gap:4px;margin-bottom:3px;font-size:11px"><span style="background:var(--blue2);color:white;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0">2</span>Optimize LLM with PPO to maximize reward while staying close to original model.</li>
+          </ol>
+          <div class="sm mt3">Goal: Produce helpful, honest, and harmless responses.</div>
+        </div>
+        <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:5px;padding:6px">
+          <div class="b sm mb3 gt">DPO (This Chapter)</div>
+          <ol style="list-style:none;padding:0">
+            <li style="display:flex;gap:4px;margin-bottom:3px;font-size:11px"><span style="background:var(--green);color:white;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0">1</span>Use reference model (frozen)</li>
+            <li style="display:flex;gap:4px;margin-bottom:3px;font-size:11px"><span style="background:var(--green);color:white;border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0">2</span>Optimize LLM to prefer the chosen response over the rejected one — no explicit reward model needed.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. REWARD MODEL TRAINING (RLHF) -->
+  <div class="card c2">
+    <div class="ch">8. Reward Model Training (RLHF)</div>
+    <div class="cb">
+      <div class="sm mb3">Learn to score response quality.</div>
+      <div class="flow mb4">
+        <div class="fn dk" style="font-size:10px">Prompt</div><div class="fa">+</div>
+        <div class="fn" style="font-size:10px">Response</div><div class="fa">→</div>
+        <div class="fn or" style="font-size:10px">Reward Model<br>(Score)</div><div class="fa">→</div>
+        <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:4px;padding:4px 8px;font-size:12px;font-weight:800;color:var(--green)">0.97</div>
+      </div>
+      <div class="b sm mb3">Training Data (Preference Pairs)</div>
+      <table>
+        <thead><tr><th>Prompt</th><th>Better Response (Chosen)</th><th>Worse Response (Rejected)</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Explain LLMs.</td>
+            <td style="background:var(--lg)">LLMs are trained on massive data… ✅</td>
+            <td style="background:var(--lr)">An LLM is just a robot… ❌</td>
+          </tr>
+          <tr>
+            <td>Write a poem about AI.</td>
+            <td style="background:var(--lg)">Roses are red, models learn too… ✅</td>
+            <td style="background:var(--lr)">Roses are red, AI is cool. ❌</td>
+          </tr>
+          <tr><td>…</td><td>…</td><td>…</td></tr>
+        </tbody>
+      </table>
+      <div style="background:var(--navy);color:white;border-radius:4px;padding:6px;font-size:11.5px;margin-top:6px;text-align:center">
+        <b>Training Objective</b><br>
+        Score(chosen) &gt; Score(rejected) for the same prompt.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 4 -->
+<div class="row">
+  <!-- 9. LoRA: LOW-RANK ADAPTATION -->
+  <div class="card c2">
+    <div class="ch">9. LoRA: Low-Rank Adaptation</div>
+    <div class="cb">
+      <div class="sm mb3">Update a tiny set of weights.</div>
+      <div class="two mb4">
+        <div>
+          <div class="b sm mb3 nv">Original Weight Matrix (W) (Huge)</div>
+          <div style="display:grid;grid-template-columns:repeat(5,18px);gap:2px;margin-bottom:4px">
+            <div class="mat-cell" style="background:#5577cc"></div><div class="mat-cell" style="background:#8855cc"></div><div class="mat-cell" style="background:#cc5533"></div><div class="mat-cell" style="background:#5577cc"></div><div class="mat-cell" style="background:#338855"></div>
+            <div class="mat-cell" style="background:#cc5533"></div><div class="mat-cell" style="background:#5577cc"></div><div class="mat-cell" style="background:#8855cc"></div><div class="mat-cell" style="background:#338855"></div><div class="mat-cell" style="background:#cc5533"></div>
+            <div class="mat-cell" style="background:#338855"></div><div class="mat-cell" style="background:#cc5533"></div><div class="mat-cell" style="background:#5577cc"></div><div class="mat-cell" style="background:#8855cc"></div><div class="mat-cell" style="background:#5577cc"></div>
+            <div class="mat-cell" style="background:#8855cc"></div><div class="mat-cell" style="background:#338855"></div><div class="mat-cell" style="background:#cc5533"></div><div class="mat-cell" style="background:#5577cc"></div><div class="mat-cell" style="background:#8855cc"></div>
+          </div>
+          <div class="sm ct">Approximate ≈</div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">Low-Rank Update (ΔW = B × Aᵀ)</div>
+          <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
+            <div>
+              <div class="sm ct mb3">B (d × r)</div>
+              <div style="display:grid;grid-template-columns:repeat(2,18px);gap:2px">
+                <div class="mat-cell" style="background:#5577cc"></div><div class="mat-cell" style="background:#cc5533"></div>
+                <div class="mat-cell" style="background:#338855"></div><div class="mat-cell" style="background:#8855cc"></div>
+                <div class="mat-cell" style="background:#5577cc"></div><div class="mat-cell" style="background:#338855"></div>
+              </div>
+            </div>
+            <div style="font-size:16px;font-weight:900">×</div>
+            <div>
+              <div class="sm ct mb3">Aᵀ (r × d)</div>
+              <div style="display:grid;grid-template-columns:repeat(5,18px);gap:2px">
+                <div class="mat-cell" style="background:#cc5533"></div><div class="mat-cell" style="background:#5577cc"></div><div class="mat-cell" style="background:#338855"></div><div class="mat-cell" style="background:#8855cc"></div><div class="mat-cell" style="background:#5577cc"></div>
+                <div class="mat-cell" style="background:#8855cc"></div><div class="mat-cell" style="background:#338855"></div><div class="mat-cell" style="background:#5577cc"></div><div class="mat-cell" style="background:#cc5533"></div><div class="mat-cell" style="background:#338855"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul class="ck">
+        <li class="d">r &lt;&lt; d (rank r is small, e.g., 4, 8, 16, 64)</li>
+        <li class="d">Only A and B are trainable → huge memory &amp; speed savings</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 10. QLoRA: QUANTIZED LoRA -->
+  <div class="card c15">
+    <div class="ch">10. QLoRA: Quantized LoRA</div>
+    <div class="cb">
+      <div class="sm mb3">Make fine-tuning even more efficient.</div>
+      <div class="two mb4">
+        <div style="text-align:center;font-size:11px;background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:6px">
+          <b>Normal FP16 Weights (16 bits)</b><br>
+          <span style="font-family:monospace;font-size:10px">0.123456<br>-0.987654<br>0.333333<br>…</span>
+        </div>
+        <div style="text-align:center;font-size:11px;background:var(--lg);border:1.5px solid var(--green);border-radius:4px;padding:6px">
+          <b>4-bit NF4 (Full Precision)</b><br>
+          <span style="font-family:monospace;font-size:10px">0.12<br>-0.99<br>0.33<br>…</span>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:12px;font-weight:800;margin-bottom:4px">+ LoRA Update</div>
+      <div style="text-align:center;font-size:14px;font-weight:900;color:var(--navy);margin-bottom:4px">= B × Aᵀ</div>
+      <div class="tip">Block-wise Normalized Float 4 (NF4) + Double Quantization</div>
+    </div>
+  </div>
+
+  <!-- 11. DPO: DIRECT PREFERENCE OPTIMIZATION -->
+  <div class="card c2">
+    <div class="ch">11. DPO: Direct Preference Optimization</div>
+    <div class="cb">
+      <div class="sm mb3">Align without a reward model.</div>
+      <div class="flow mb4">
+        <div class="fn dk" style="font-size:10px">Prompt</div><div class="fa">→</div>
+        <div style="font-size:11px;text-align:center">
+          <div class="fn" style="font-size:10px;margin-bottom:2px">Reference Model (Frozen)</div>
+          <div style="font-size:9px">Chosen Resp. ↔ Rejected Resp.</div>
+        </div>
+        <div class="fa">→</div>
+        <div style="font-size:11px;text-align:center">Compute Log Probabilities</div>
+      </div>
+      <div class="two mb4">
+        <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:11px;text-align:center">
+          <b>Ref Model Scores</b><br>
+          <div style="height:30px;background:linear-gradient(to right,var(--blue2),var(--blue));border-radius:3px;margin:4px 0"></div>
+        </div>
+        <div style="background:var(--orange);border:1.5px solid var(--gold);border-radius:4px;padding:5px;font-size:11px;text-align:center">
+          <b>Trainable Model Scores</b><br>
+          <div style="height:30px;background:linear-gradient(to right,var(--orange),var(--gold));border-radius:3px;margin:4px 0"></div>
+        </div>
+      </div>
+      <div style="background:var(--navy);color:white;border-radius:4px;padding:5px;font-size:11px;text-align:center;margin-bottom:4px">
+        Score(chosen) &gt; Score(rejected) (using log-prob differences)
+      </div>
+      <div style="display:flex;gap:6px;justify-content:center">
+        <span class="sm gt b">✅ Simpler than RLHF</span>
+        <span class="sm gt b">✅ Stable training</span>
+        <span class="sm gt b">✅ Great performance</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 5 -->
+<div class="row">
+  <!-- 12. EVALUATION METHODS -->
+  <div class="card c2">
+    <div class="ch">12. Evaluation Methods</div>
+    <div class="cb">
+      <div class="three">
+        <div>
+          <div class="b sm mb3 nv">Word-Level Metrics</div>
+          <ul class="ck">
+            <li class="d"><b>Perplexity:</b> How well the model predicts text.</li>
+            <li class="d"><b>BLEU / ROUGE:</b> N-gram overlap with references.</li>
+            <li class="d"><b>BERTScore:</b> Semantic similarity using embeddings.</li>
+            <li class="d"><b>Limitations:</b> Don't capture correctness, reasoning, or human preference.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">Benchmarks (Examples)</div>
+          <ul class="ck">
+            <li class="d"><b>MMLU:</b> 57 tasks across many topics</li>
+            <li class="d"><b>GSM8K:</b> Grade-school math</li>
+            <li class="d"><b>HumanEval:</b> Coding tasks</li>
+            <li class="d"><b>TruthfulQA:</b> Truthfulness</li>
+            <li class="d"><b>HellaSwag:</b> Commonsense reasoning</li>
+            <li class="d"><b>GLUE:</b> Language understanding</li>
+          </ul>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">LLM-as-a-Judge</div>
+          <ul class="ck">
+            <li class="d">Use a strong LLM to score many topics.</li>
+            <li class="d">Pairwise comparison is common.</li>
+            <li class="d">Scales well as models improve.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13. COMMON HYPERPARAMETERS TO TUNE -->
+  <div class="card c2">
+    <div class="ch">13. Common Hyperparameters to Tune</div>
+    <div class="cb">
+      <table>
+        <thead><tr><th>Hyperparameter</th><th>Purpose</th><th>Typical Values</th></tr></thead>
+        <tbody>
+          <tr><td><b>learning_rate</b></td><td>Step size for updates</td><td>1e-5 to 5e-4</td></tr>
+          <tr><td><b>num_epochs / max_steps</b></td><td>How long to train</td><td>1 or 100–1000 steps</td></tr>
+          <tr><td><b>batch_size</b></td><td>Samples per step</td><td>1–16 (depends on GPU)</td></tr>
+          <tr><td><b>warmup_ratio</b></td><td>Gradually increase LR</td><td>0.03–0.1</td></tr>
+          <tr><td><b>weight_decay</b></td><td>Regularization</td><td>4B, 8B, k1?</td></tr>
+          <tr><td><b>lora_alpha</b></td><td>LoRA scaling</td><td>2× rank (e.g., 32 for r=16)</td></tr>
+          <tr><td><b>dropout</b></td><td>Prevent overfitting</td><td>0.05–0.2</td></tr>
+        </tbody>
+      </table>
+      <div class="tip mt3">Always experiment! There's no one-size-fits-all recipe.</div>
+    </div>
+  </div>
+
+  <!-- 14. LoRA TARGET MODULES (EXAMPLE) -->
+  <div class="card c2">
+    <div class="ch">14. LoRA Target Modules (Example)</div>
+    <div class="cb">
+      <div class="sm mb3">Common layers to apply LoRA to in LLaMA.</div>
+      <div style="display:flex;gap:8px">
+        <div>
+          <div class="b sm mb3">Transformer Block</div>
+          <ul class="ck">
+            <li class="d"><b>k_proj</b> (Key Projection)</li>
+            <li class="d"><b>v_proj</b> (Value Projection)</li>
+            <li class="d"><b>q_proj</b> (Query Projection)</li>
+            <li class="d"><b>o_proj</b> (Output Projection)</li>
+            <li class="d"><b>up_proj</b> (Up Projection)</li>
+            <li class="d"><b>down_proj</b> (Down Projection)</li>
+            <li class="d"><b>gate_proj</b> (Gate Projection)</li>
+          </ul>
+        </div>
+        <div>
+          <div class="b sm mb3">Architecture</div>
+          <div style="background:var(--lp);border:1.5px solid var(--purple);border-radius:5px;padding:7px;font-size:11px;margin-bottom:4px;text-align:center">
+            <b>Attention</b><br>(k, q, v, o)
+          </div>
+          <div style="text-align:center;font-size:18px;color:var(--navy)">⬇</div>
+          <div style="background:var(--orange);color:var(--navy);border:1.5px solid var(--gold);border-radius:4px;padding:3px 7px;font-size:10px;font-weight:700;text-align:center;margin:3px 0">Add &amp; Norm</div>
+          <div style="text-align:center;font-size:18px;color:var(--navy)">⬇</div>
+          <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:5px;padding:7px;font-size:11px;text-align:center">
+            <b>Feed-Forward</b><br>(Up, Gate, Down)
+          </div>
+          <div style="text-align:center;font-size:18px;color:var(--navy)">⬇</div>
+          <div style="background:var(--orange);color:var(--navy);border:1.5px solid var(--gold);border-radius:4px;padding:3px 7px;font-size:10px;font-weight:700;text-align:center;margin:3px 0">Add &amp; Norm</div>
+        </div>
+      </div>
+      <div class="tip mt3">Choose layers that give the best trade-off between performance and efficiency.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 6 -->
+<div class="row">
+  <!-- 15. END-TO-END WORKFLOW SUMMARY -->
+  <div class="card c2">
+    <div class="ch">15. End-to-End Workflow Summary</div>
+    <div class="cb">
+      <div class="flow mb4" style="flex-wrap:wrap;gap:4px">
+        <div style="text-align:center;font-size:10px"><div style="font-size:18px">📁</div>Collect / Prep Data</div><div class="fa">→</div>
+        <div style="text-align:center;font-size:10px"><div style="font-size:18px">📋</div>Template &amp; Tokenize</div><div class="fa">→</div>
+        <div style="text-align:center;font-size:10px"><div style="font-size:18px">🤖</div>Load Base Model</div><div class="fa">→</div>
+        <div style="text-align:center;font-size:10px"><div style="font-size:18px">🔧</div>(Optional) Quantize</div><div class="fa">→</div>
+        <div style="text-align:center;font-size:10px"><div style="font-size:18px">⚙️</div>LoRA / PEFT Config</div><div class="fa">→</div>
+        <div style="text-align:center;font-size:10px"><div style="font-size:18px">🏋️</div>Fine-Tune</div><div class="fa">→</div>
+        <div style="text-align:center;font-size:10px"><div style="font-size:18px">🚀</div>Deploy &amp; Use</div>
+      </div>
+      <div class="sm mb3 b">Choose your path:</div>
+      <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:10.5px;margin-bottom:4px">
+        <b>Instruction Tuning (SFT) →</b> Data → SFT (Non-instruction) → SFT → Instruction-Tuned Model
+      </div>
+      <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:4px;padding:5px;font-size:10.5px">
+        <b>Alignment (DPO / RLHF) →</b> Preference Data → (Reward Model) → DPO/PPO → Aligned Model
+      </div>
+    </div>
+  </div>
+
+  <!-- 16. KEY TAKEAWAYS -->
+  <div class="card c2">
+    <div class="ch or">16. Key Takeaways</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="st">Pretraining teaches language; fine-tuning teaches behavior.</li>
+        <li class="st">SFT makes models follow instructions.</li>
+        <li class="st">Preference tuning aligns models with human values.</li>
+        <li class="st">PEFT (LoRA, QLoRA) makes fine-tuning affordable.</li>
+        <li class="st">DPO is a simpler alternative to RLHF (PPO).</li>
+        <li class="st">Evaluation needs multiple metrics ≠ human judgment.</li>
+        <li class="st">Good data and careful tuning beat more compute.</li>
+        <li class="st">Always test your model on real tasks!</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 17. WHAT'S NEXT? -->
+  <div class="card">
+    <div class="ch or">17. What's Next?</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="ar">Advanced fine-tuning (ORPO, REFT, etc.)</li>
+        <li class="ar">Long-context fine-tuning</li>
+        <li class="ar">Multimodal alignment</li>
+        <li class="ar">Tool-use and agent fine-tuning</li>
+        <li class="ar">Continual learning &amp; domain adaptation</li>
+        <li class="ar">Building your own instruction datasets</li>
+      </ul>
+      <div style="text-align:center;font-size:32px;margin-top:8px">🚀</div>
+    </div>
+  </div>
+</div>
+
+<div class="bb">
+  <strong>Fine-tuning is where foundation models become your models.</strong> &nbsp; Small data. Smart tuning. Big impact. &nbsp; Keep experimenting! ⚙️
+</div>
+
+</div>
+</body>
+</html>

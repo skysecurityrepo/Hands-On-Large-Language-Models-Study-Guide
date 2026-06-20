@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 6: Prompt Engineering</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Source+Code+Pro:wght@400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a2744;--navy2:#1e3060;--orange:#e8a020;--orange2:#f5b830;--blue:#2255cc;--blue2:#3366dd;--lb:#dce8ff;--lb2:#eaf0ff;--yellow:#fff3b0;--y2:#fffae0;--green:#2a7a3b;--lg:#e8f5eb;--red:#cc2222;--lr:#fdecea;--gray:#f4f6fb;--border:#b8c8e8;--text:#1a2030;--cbg:#1e2a40;--ct:#e8f0ff;--gold:#c8960c;--purple:#6633aa;--lp:#f0e8ff}
+body{font-family:'Nunito',sans-serif;background:#e8ecf8;color:var(--text);font-size:13px;line-height:1.5}
+.hdr{background:var(--navy);color:white;text-align:center;padding:14px 20px 10px;border-bottom:4px solid var(--orange)}
+.hdr-in{display:flex;align-items:center;justify-content:center;gap:12px}
+.hdr h1{font-size:22px;font-weight:900;line-height:1.1}
+.hdr h1 span{color:var(--orange)}
+.hdr p{font-size:11px;color:#c8d4f0;max-width:950px;margin:3px auto 0}
+.pg{max-width:1440px;margin:0 auto;padding:7px 7px 18px;display:flex;flex-direction:column;gap:7px}
+.row{display:flex;gap:7px}
+.row>*{flex:1;min-width:0}
+.c2{flex:2}.c3{flex:3}.c15{flex:1.5}
+.card{background:white;border:1.5px solid var(--border);border-radius:7px;overflow:hidden}
+.ch{background:var(--navy);color:white;font-size:11px;font-weight:800;padding:4px 8px;text-transform:uppercase;letter-spacing:.3px}
+.ch.or{background:var(--orange);color:var(--navy)}
+.ch.gr{background:var(--green)}
+.ch.rd{background:var(--red)}
+.ch.bl{background:var(--blue2)}
+.ch.pu{background:var(--purple)}
+.cb{padding:8px}
+ul.ck{list-style:none}
+ul.ck li{display:flex;gap:5px;align-items:flex-start;margin-bottom:3px;font-size:11.5px}
+ul.ck li::before{content:"✅";font-size:10px;margin-top:1px;flex-shrink:0}
+ul.ck li.x::before{content:"❌"}
+ul.ck li.d::before{content:"•";font-size:13px;color:var(--navy);margin-top:0}
+ul.ck li.st::before{content:"⭐"}
+ul.ck li.ar::before{content:"➡️";font-size:9px;margin-top:2px}
+.flow{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin:4px 0}
+.fn{background:var(--lb);border:1.5px solid var(--blue);border-radius:4px;padding:3px 7px;font-size:11px;font-weight:700;text-align:center}
+.fn.dk{background:var(--navy);color:white;border-color:var(--navy)}
+.fn.gn{background:var(--lg);border-color:var(--green)}
+.fn.or{background:#fff0d0;border-color:var(--orange)}
+.fn.pu{background:var(--lp);border-color:var(--purple)}
+.fn.rd{background:var(--lr);border-color:var(--red)}
+.fa{font-size:13px;color:#555;font-weight:900}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:var(--navy);color:white;padding:3px 6px;text-align:left;font-weight:700;font-size:10.5px}
+td{padding:3px 6px;border-bottom:1px solid #dde4f0;vertical-align:top;font-size:11px}
+tr:nth-child(even) td{background:var(--gray)}
+pre{background:var(--cbg);color:var(--ct);font-family:'Source Code Pro',monospace;font-size:10px;padding:7px 9px;border-radius:4px;overflow-x:auto;line-height:1.5;margin:3px 0;white-space:pre}
+.kw{color:#79b8ff}.str{color:#9ecbff}.cm{color:#6a8099;font-style:italic}.nm{color:#f8c555}
+.tip{background:var(--y2);border:1.5px solid var(--gold);border-radius:4px;padding:5px 7px;font-size:11px;margin-top:4px}
+.tip strong{color:var(--navy)}
+.tkw{background:var(--yellow);border:2px solid var(--gold);border-radius:5px;padding:7px;margin-top:5px;font-size:11.5px}
+.tkwt{font-weight:800;color:var(--navy);margin-bottom:2px}
+.b{font-weight:800}.sm{font-size:11px}.ti{font-size:10.5px}
+.mt3{margin-top:3px}.mt5{margin-top:5px}.mt7{margin-top:7px}
+.mb3{margin-bottom:3px}.mb5{margin-bottom:5px}
+.ct{text-align:center}
+.nv{color:var(--navy)}.gt{color:var(--green)}.rt{color:var(--red)}.ot{color:var(--orange)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.four{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.ib{border:1.5px solid var(--border);border-radius:5px;overflow:hidden;margin-top:4px}
+.ibh{background:var(--navy2);color:white;font-size:10.5px;font-weight:700;padding:3px 7px}
+.ibh.or{background:var(--orange);color:var(--navy)}
+.ibh.bl{background:var(--blue2)}
+.ibh.gn{background:var(--green)}
+.ibh.pu{background:var(--purple)}
+.ibh.rd{background:var(--red)}
+.ibb{padding:6px;font-size:11px}
+.chat-box{background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:7px;font-size:11px;margin-top:4px}
+.chat-user{background:var(--navy);color:white;border-radius:4px;padding:4px 7px;margin-bottom:4px;font-size:10.5px}
+.chat-asst{background:var(--lg);border:1px solid var(--green);border-radius:4px;padding:4px 7px;font-size:10.5px}
+.tag-block{display:inline-block;background:var(--navy);color:white;font-family:monospace;font-size:10.5px;padding:2px 6px;border-radius:3px;margin:2px}
+.bb{background:var(--navy);color:white;padding:9px 14px;border-radius:5px;font-size:12px;text-align:center;margin-top:5px}
+.bb strong{color:var(--orange2)}
+/* TEMP BARS */
+.temp-bar-row{display:flex;gap:4px;margin-top:4px}
+.temp-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.bar-seg{border-radius:3px;width:100%;display:flex;align-items:flex-end;justify-content:center}
+/* REASONING BOXES */
+.reason-path{background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:6px;font-size:11px;text-align:center}
+/* SYSTEM1/2 BOXES */
+.sys-box{border:1.5px solid var(--border);border-radius:5px;padding:6px;font-size:11px}
+.sys-title{font-weight:800;font-size:12px;margin-bottom:4px;text-align:center}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-in">
+    <div style="font-size:42px">🤖</div>
+    <div>
+      <h1>CHAPTER 6: <span>PROMPT ENGINEERING</span></h1>
+      <p>Learn how to design effective prompts, control LLM outputs, reason with generative models, and evaluate/verify their responses for reliable real-world applications.</p>
+    </div>
+    <div style="font-size:38px">🧠</div>
+  </div>
+</div>
+
+<div class="pg">
+
+<!-- ROW 1 -->
+<div class="row">
+  <!-- 1. WHAT IS PROMPT ENGINEERING -->
+  <div class="card">
+    <div class="ch">1. What is Prompt Engineering?</div>
+    <div class="cb">
+      <ul class="ck">
+        <li>The art and science of crafting inputs (prompts) to guide LLMs toward desired outputs.</li>
+        <li>Improves relevance, accuracy, consistency, and safety of responses.</li>
+        <li>Enables complex reasoning, structured output, and reliable automation.</li>
+        <li>Includes prompt design, iterative refinement, verification, and evaluation.</li>
+      </ul>
+      <div class="flow mt3">
+        <div class="fn dk">Prompt (input)</div><div class="fa">→</div>
+        <div class="fn" style="font-size:10px">LLM (Model)</div><div class="fa">→</div>
+        <div class="fn gn">Output (Response)</div>
+      </div>
+      <div class="tip mt3">Good prompts = Clear instructions + right context + examples + constraints + iteration</div>
+    </div>
+  </div>
+
+  <!-- 2. USING TEXT GENERATION MODELS -->
+  <div class="card c15">
+    <div class="ch">2. Using Text Generation Models</div>
+    <div class="cb">
+      <div class="b sm mb3">Key Questions:</div>
+      <ul class="ck">
+        <li class="d">Which model to use? (proprietary vs open source)</li>
+        <li class="d">How to load a model?</li>
+        <li class="d">How to control the output?</li>
+      </ul>
+      <div class="b sm mt5 mb3">Proprietary vs Open Source</div>
+      <ul class="ck">
+        <li>Proprietary = higher performance, managed, API-based</li>
+        <li>Open Source = flexible, private, cost-effective</li>
+      </ul>
+      <div class="b sm mt5 mb3">Popular Foundation Models (Examples)</div>
+      <table>
+        <thead><tr><th>Model Family</th><th>Developer</th><th>Sizes (Params)</th></tr></thead>
+        <tbody>
+          <tr><td><b>GPT-4 / 3.5</b></td><td>OpenAI</td><td>175B+ (GPT-4)</td></tr>
+          <tr><td><b>Llama 3</b></td><td>Meta</td><td>8B, 70B</td></tr>
+          <tr><td><b>Phi-3</b></td><td>Microsoft</td><td>3.8B, 7B, 14B</td></tr>
+          <tr><td><b>Mistral</b></td><td>Mistral AI</td><td>7B, 8x7B</td></tr>
+          <tr><td><b>Gemma</b></td><td>Google</td><td>2B, 7B</td></tr>
+        </tbody>
+      </table>
+      <div class="tip mt3">⭐ Start small → scale up for better performance.</div>
+    </div>
+  </div>
+
+  <!-- 3. LOADING A TEXT GENERATION MODEL (PHI-3-MINI) -->
+  <div class="card c2">
+    <div class="ch">3. Loading a Text Generation Model (Example: Phi-3-Mini)</div>
+    <div class="cb">
+      <div class="sm mb3">Using transformers pipeline:</div>
+<pre><span class="kw">import</span> torch
+<span class="kw">from</span> transformers <span class="kw">import</span> AutoModelForCausalLM, AutoTokenizer,
+                           pipeline
+
+model = AutoModelForCausalLM.from_pretrained(
+    <span class="str">"microsoft/Phi-3-mini-4k-instruct"</span>,
+    device_map=<span class="str">"cuda"</span>,
+    torch_dtype=<span class="str">"auto"</span>,
+    trust_remote_code=<span class="kw">True</span>
+)
+
+tokenizer = AutoTokenizer.from_pretrained(
+    <span class="str">"microsoft/Phi-3-mini-4k-instruct"</span>)
+
+pipe = pipeline(
+    <span class="str">"text-generation"</span>,
+    model=model,
+    tokenizer=tokenizer,
+    return_full_text=<span class="kw">False</span>,
+    max_new_tokens=<span class="nm">500</span>,
+    do_sample=<span class="kw">False</span>  <span class="cm"># deterministic output</span>
+)</pre>
+      <div class="tip mt3">pipeline handles tokenization, chat template, and generation for you.</div>
+    </div>
+  </div>
+
+  <!-- 4. CHAT TEMPLATE (UNDER THE HOOD) -->
+  <div class="card c15">
+    <div class="ch">4. Chat Template (Under the Hood)</div>
+    <div class="cb">
+      <div class="b sm mb3">Example Interaction</div>
+      <div class="chat-box">
+        <div style="display:flex;gap:6px;margin-bottom:5px">
+          <div style="font-size:18px">👤</div>
+          <div class="chat-user" style="flex:1">Create a funny joke about chickens.</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <div style="font-size:18px">🤖</div>
+          <div class="chat-asst" style="flex:1">Why don't chickens like to go to the gym? Because they can't crack the egg-sistence of it!</div>
+        </div>
+      </div>
+      <div class="b sm mt5 mb3">How it's converted using chat template:</div>
+      <div style="background:var(--cbg);color:var(--ct);font-family:monospace;font-size:10.5px;padding:7px;border-radius:4px;line-height:1.6">
+        &lt;s&gt;[&lt;|user|&gt;]<br>
+        Create a funny joke about chickens.&lt;[end]&gt;<br>
+        [&lt;|assistant|&gt;]
+      </div>
+      <div class="b sm mt5 mb3">Special tags guide the model:</div>
+      <div style="font-size:11px">
+        <span class="tag-block">[&lt;|user|&gt;]</span> = Human input &nbsp;
+        <span class="tag-block">[&lt;|assistant|&gt;]</span> = Model output &nbsp;
+        <span class="tag-block">&lt;[end]&gt;</span> = End of turn
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 2: CONTROLLING MODEL OUTPUT -->
+<div class="row">
+  <!-- 5. CONTROLLING MODEL OUTPUT -->
+  <div class="card c3">
+    <div class="ch">5. Controlling Model Output</div>
+    <div class="cb">
+      <div class="three">
+        <!-- Next Token -->
+        <div>
+          <div class="b sm mb3 nv">Next Token Generation</div>
+          <div class="sm mb3">LLM assigns a probability to all possible next tokens.</div>
+          <div class="sm mb3">Prompt: "I am driving a …"</div>
+          <table>
+            <thead><tr><th>Token</th><th>Probability</th></tr></thead>
+            <tbody>
+              <tr><td>car</td><td>0.45</td></tr>
+              <tr><td>truck</td><td>0.30</td></tr>
+              <tr><td>bike</td><td>0.15</td></tr>
+              <tr><td>elephant</td><td>0.01</td></tr>
+              <tr><td>…</td><td>…</td></tr>
+            </tbody>
+          </table>
+          <div class="sm mt3">Highest probability token is chosen (unless sampling is enabled).</div>
+        </div>
+        <!-- Temperature -->
+        <div>
+          <div class="b sm mb3 nv">5.1 Temperature (Controls Randomness)</div>
+          <div class="sm mb3">Higher temperature = more random/creative<br>Lower temperature = more deterministic</div>
+          <div class="b sm mb3">Effect of Temperature</div>
+          <div class="two" style="gap:4px">
+            <div style="text-align:center;font-size:11px">
+              <div class="b">Low Temp (0.2)</div>
+              <div style="display:flex;gap:3px;align-items:flex-end;height:50px;margin:5px 0;justify-content:center">
+                <div style="width:16px;background:var(--blue2);border-radius:2px 2px 0 0;height:42px"></div>
+                <div style="width:16px;background:var(--blue2);border-radius:2px 2px 0 0;height:14px;opacity:0.6"></div>
+                <div style="width:16px;background:var(--blue2);border-radius:2px 2px 0 0;height:8px;opacity:0.4"></div>
+                <div style="width:16px;background:var(--blue2);border-radius:2px 2px 0 0;height:4px;opacity:0.3"></div>
+              </div>
+              <div class="sm">car &nbsp; truck &nbsp; bike &nbsp; elephant</div>
+              <div class="sm gt"><b>Low → deterministic (predictable)</b></div>
+            </div>
+            <div style="text-align:center;font-size:11px">
+              <div class="b">High Temp (1.0)</div>
+              <div style="display:flex;gap:3px;align-items:flex-end;height:50px;margin:5px 0;justify-content:center">
+                <div style="width:16px;background:var(--orange);border-radius:2px 2px 0 0;height:28px"></div>
+                <div style="width:16px;background:var(--orange);border-radius:2px 2px 0 0;height:22px;opacity:0.8"></div>
+                <div style="width:16px;background:var(--orange);border-radius:2px 2px 0 0;height:16px;opacity:0.6"></div>
+                <div style="width:16px;background:var(--orange);border-radius:2px 2px 0 0;height:18px;opacity:0.7"></div>
+              </div>
+              <div class="sm">car &nbsp; truck &nbsp; bike &nbsp; elephant</div>
+              <div class="sm ot"><b>High → diverse (creative)</b></div>
+            </div>
+          </div>
+          <pre style="margin-top:5px">output = pipe(messages, do_sample=<span class="kw">True</span>,
+  temperature=<span class="nm">1.6</span>)
+<span class="cm"># Every run may produce different output!</span></pre>
+        </div>
+        <!-- Top-p -->
+        <div>
+          <div class="b sm mb3 nv">5.2 Top-p (Nucleus Sampling)</div>
+          <div class="sm mb3">Considers tokens whose cumulative probability &gt;= top_p.</div>
+          <div class="two" style="gap:4px">
+            <div style="text-align:center;font-size:11px">
+              <div class="b">Low top_p (0.2)</div>
+              <div class="sm" style="margin:4px 0">consider fewer tokens</div>
+              <div style="background:var(--lb2);border:1px solid var(--blue);border-radius:3px;padding:4px;font-size:10px">
+                Only top tokens sampled
+              </div>
+            </div>
+            <div style="text-align:center;font-size:11px">
+              <div class="b">High top_p (1.0)</div>
+              <div class="sm" style="margin:4px 0">consider more tokens</div>
+              <div style="background:#fff0d0;border:1px solid var(--orange);border-radius:3px;padding:4px;font-size:10px">
+                Wider token sampling
+              </div>
+            </div>
+          </div>
+          <pre style="margin-top:5px">output = pipe(messages, do_sample=<span class="kw">True</span>,
+  top_p=<span class="nm">0.9</span>)</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5.3 CHOOSING PARAMETERS TABLE -->
+  <div class="card c2">
+    <div class="ch">5.3 Choosing Parameters (Examples)</div>
+    <div class="cb">
+      <table>
+        <thead><tr><th>Use Case</th><th>Temperature</th><th>Top-p</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><b>Brainstorming / Ideas</b></td><td>High (0.8–1.2)</td><td>High (0.8–1.0)</td><td>Max creativity &amp; diversity</td></tr>
+          <tr><td><b>Creative Writing</b></td><td>High (0.7–1.0)</td><td>Low (0.2–0.7)</td><td>Creative but still coherent</td></tr>
+          <tr><td><b>Email / Reports</b></td><td>Low (0.1–0.3)</td><td>Low (0.1–0.5)</td><td>Focused, accurate, predictable</td></tr>
+          <tr><td><b>Translation</b></td><td>Low (0.1–0.3)</td><td>High (0.8–1.0)</td><td>Stable with vocab variety</td></tr>
+          <tr><td><b>Code Generation</b></td><td>Low (0.2–0.4)</td><td>Low (0.1–0.5)</td><td>Accurate, consistent code</td></tr>
+        </tbody>
+      </table>
+      <div class="tip mt3"><strong>💡 Tip:</strong> Start with low temp (0.2) + top_p (0.9) and adjust.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 3: PROMPT INGREDIENTS -->
+<div class="row">
+  <!-- 6. THE BASIC INGREDIENTS OF A PROMPT -->
+  <div class="card">
+    <div class="ch">6. The Basic Ingredients of a Prompt</div>
+    <div class="cb">
+      <div class="sm mb3">Prompt engineering = designing inputs to guide the LLM to produce useful, accurate, and safe outputs.</div>
+      <div class="b sm mb3">The Basic Ingredients of a Prompt</div>
+      <ul class="ck">
+        <li class="d">🎭 <b>Persona</b> — Define the role the LLM should take on.</li>
+        <li class="d">📋 <b>Instruction</b> — The task or question to be completed.</li>
+        <li class="d">🌍 <b>Context</b> — Background information to help the model.</li>
+        <li class="d">📄 <b>Format</b> — How the output should be structured.</li>
+        <li class="d">👥 <b>Audience</b> — Who is the response for? (e.g., experts, kids)</li>
+        <li class="d">🎵 <b>Tone</b> — Style of response (formal, friendly, etc.).</li>
+        <li class="d">📊 <b>Data</b> — Main input or text to be processed.</li>
+        <li class="d">🎯 <b>Output Indicators</b> — Guide output (e.g., "Answer:", JSON).</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 7. EXAMPLE: COMPLEX PROMPT -->
+  <div class="card c2">
+    <div class="ch">7. Example: Complex Prompt</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <table style="margin-bottom:5px">
+            <thead><tr><th>Element</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td><b>Persona</b></td><td>You are an expert in sentiment analysis.</td></tr>
+              <tr><td><b>Instruction</b></td><td>Classify the sentiment of the following text.</td></tr>
+              <tr><td><b>Context</b></td><td>This will be used in a customer feedback dashboard.</td></tr>
+              <tr><td><b>Format</b></td><td>Return only one word: Positive, Negative or Neutral.</td></tr>
+              <tr><td><b>Audience</b></td><td>Business analysts who need quick insights.</td></tr>
+              <tr><td><b>Tone</b></td><td>Professional and concise.</td></tr>
+              <tr><td><b>Data</b></td><td>Text: "The product is amazing and works perfectly!"</td></tr>
+              <tr><td><b>Output Indicator</b></td><td>Sentiment:</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class="b sm mb3">Full Prompt Sent to LLM:</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:7px;font-size:10.5px;line-height:1.6">
+            You are an expert in sentiment analysis. Classify the sentiment of the following text. This will be used in a customer feedback dashboard. Return only one word: Positive, Negative or Neutral. The response is for business analysts who need quick insights. Use a professional and concise tone. Text: "The product is amazing and works perfectly!"<br>
+            <b>Sentiment:</b>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. INSTRUCTION-BASED PROMPTING -->
+  <div class="card c15">
+    <div class="ch">8. Instruction-Based Prompting (Use Cases)</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="ar">🏷️ <b>Classification</b> — "Classify the sentiment of this review."</li>
+        <li class="ar">📝 <b>Summarization</b> — "Summarize the following article…"</li>
+        <li class="ar">🔍 <b>Information Extraction</b> — "Extract all dates and locations."</li>
+        <li class="ar">🌐 <b>Translation</b> — "Translate the following text…"</li>
+        <li class="ar">❓ <b>Question Answering</b> — "Answer the following question…"</li>
+        <li class="ar">💻 <b>Code Generation</b> — "Write a Python function that…"</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 9. IN-CONTEXT LEARNING -->
+  <div class="card c15">
+    <div class="ch">9. In-Context Learning (Providing Examples)</div>
+    <div class="cb">
+      <div class="b sm mb3">Types</div>
+      <ul class="ck">
+        <li class="d"><b>Zero-shot</b> — No examples provided.</li>
+        <li class="d"><b>One-shot</b> — One example provided.</li>
+        <li class="d"><b>Few-shot</b> — Two or more examples provided.</li>
+      </ul>
+      <div class="b sm mt5 mb3">Example (One-shot)</div>
+      <div class="chat-box">
+        <div class="chat-user">User: A "Gigamuru" is a type of Japanese musical instrument. An example of a sentence that uses the word Gigamuru is:</div>
+        <div class="chat-asst" style="margin-top:3px">I have a Gigamuru that my uncle gave me as a gift. I love to play it at home.</div>
+        <div class="chat-user" style="margin-top:3px">User: To "screeg" something is to swing a sword at it. An example of a sentence that uses the word screeg is:</div>
+        <div class="chat-asst" style="margin-top:3px">During the intense duel, the knight skillfully screeged his opponent's…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 4 -->
+<div class="row">
+  <!-- 10. CHAIN PROMPTING -->
+  <div class="card">
+    <div class="ch">10. Chain Prompting: Breaking Up the Problem</div>
+    <div class="cb">
+      <div class="sm mb3">Break complex tasks into sequential steps. Output of one prompt → input of next prompt.</div>
+      <div class="flow mb3">
+        <div class="fn" style="font-size:10px">Step 1<br>Generate<br>Product Name</div><div class="fa">→</div>
+        <div class="fn" style="font-size:10px">Step 2<br>Generate<br>Slogan</div><div class="fa">→</div>
+        <div class="fn" style="font-size:10px">Step 3<br>Generate<br>Sales Pitch</div>
+      </div>
+      <div class="b sm mb3">Example Workflow</div>
+      <pre><span class="cm"># Step 1</span>
+name = generate(<span class="str">"Create a name for this product..."</span>)
+<span class="cm"># Step 2</span>
+slogan = generate(<span class="str">f"Create a slogan for {name}..."</span>)
+<span class="cm"># Step 3</span>
+pitch = generate(<span class="str">f"Write a pitch for {name}: {slogan}..."</span>)</pre>
+      <ul class="ck mt3">
+        <li class="d">Use name + features → get product name.</li>
+        <li class="d">Use name + features → get slogan.</li>
+        <li class="d">Use name + slogan + features → get sales pitch.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 11. REASONING WITH GENERATIVE MODELS -->
+  <div class="card c15">
+    <div class="ch">11. Reasoning with Generative Models</div>
+    <div class="cb">
+      <div class="sm mb3">Mimic human System 2 thinking (slow, logical, reflective).</div>
+      <div class="two">
+        <div class="sys-box" style="background:var(--lr);border-color:var(--red)">
+          <div class="sys-title rt">System 1 Thinking (Intuitive)</div>
+          <ul class="ck">
+            <li>Automatic</li>
+            <li>Pattern matching</li>
+            <li>No reflection</li>
+            <li class="x">More errors</li>
+          </ul>
+        </div>
+        <div class="sys-box" style="background:var(--lg);border-color:var(--green)">
+          <div class="sys-title gt">System 2 Thinking (Logical)</div>
+          <ul class="ck">
+            <li>Step-by-step</li>
+            <li>Reflective</li>
+            <li>More reliable</li>
+            <li>Better for complex tasks</li>
+          </ul>
+        </div>
+      </div>
+      <div class="b sm mt5 mb3">Techniques to enable reasoning:</div>
+      <ul class="ck">
+        <li>Chain-of-Thought (CoT)</li>
+        <li>Self-Consistency</li>
+        <li>Tree-of-Thought (ToT)</li>
+        <li>Verification &amp; Evaluation</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 12. CHAIN-OF-THOUGHT (COT) -->
+  <div class="card c15">
+    <div class="ch">12. Chain-of-Thought (CoT)</div>
+    <div class="cb">
+      <div class="sm mb3">Encourage the model to "think" before answering.</div>
+      <div class="b sm mb3">Example Zero-shot CoT:</div>
+      <div class="chat-box">
+        <div class="chat-user">User: The cafeteria had 23 apples. If they used 20 to make lunch and bought 6 more, how many apples do they have? Let's think step-by-step.</div>
+        <div class="chat-asst" style="margin-top:3px">
+          Step 1: Start with 23 apples.<br>
+          Step 2: Used 20 → 23 − 20 = 3 apples left.<br>
+          Step 3: Bought 6 more → 3 + 6 = 9 apples.<br>
+          Answer: 9 apples.
+        </div>
+      </div>
+      <div class="tip mt3">Helps with math, logic, reasoning, and multi-step tasks.</div>
+    </div>
+  </div>
+
+  <!-- 13. SELF-CONSISTENCY (SC) -->
+  <div class="card">
+    <div class="ch">13. Self-Consistency (SC)</div>
+    <div class="cb">
+      <div class="sm mb3">Sample multiple reasoning paths &amp; take majority answer.</div>
+      <div class="b sm mb3">Same Question</div>
+      <div style="display:flex;gap:5px;margin-bottom:5px">
+        <div class="reason-path"><b>Path 1</b><br>Ans: 9</div>
+        <div class="reason-path"><b>Path 2</b><br>Ans: 10</div>
+        <div class="reason-path"><b>Path N</b><br>Ans: 9</div>
+      </div>
+      <div style="background:var(--lg);border:2px solid var(--green);border-radius:5px;padding:6px;text-align:center;font-size:12px;font-weight:800">
+        Majority Vote<br>Final Answer: 9
+      </div>
+      <ul class="ck mt3">
+        <li>Improves accuracy</li>
+        <li>More compute (multiple calls)</li>
+        <li>Best used with CoT</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 14. TREE-OF-THOUGHT (TOT) -->
+  <div class="card">
+    <div class="ch">14. Tree-of-Thought (ToT)</div>
+    <div class="cb">
+      <div class="sm mb3">Explore multiple reasoning paths as a tree.</div>
+      <div style="text-align:center;margin:5px 0">
+        <div class="fn dk" style="display:inline-block;margin-bottom:4px">Question</div>
+        <div style="display:flex;justify-content:center;gap:8px;margin-bottom:4px">
+          <div class="fn" style="font-size:10px">Thought 1</div>
+          <div class="fn" style="font-size:10px">Thought 2</div>
+          <div class="fn" style="font-size:10px">Thought 3</div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:5px">
+          <div style="font-size:18px">✅</div>
+          <div style="font-size:18px">✅</div>
+          <div style="font-size:18px">❌</div>
+        </div>
+      </div>
+      <ul class="ck">
+        <li>Explore many ideas</li>
+        <li>Prune low-quality thoughts</li>
+        <li>Great for creative &amp; complex tasks</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 5 -->
+<div class="row">
+  <!-- 16. GRAMMAR: CONSTRAINED SAMPLING -->
+  <div class="card c15">
+    <div class="ch">16. Grammar: Constrained Sampling</div>
+    <div class="cb">
+      <div class="sm mb3">Limit the model to only valid tokens.</div>
+      <div class="sm mb3"><b>Example:</b> Allowed outputs → {"positive", "neutral", "negative"}</div>
+      <div class="ib mb3">
+        <div class="ibh rd">Without Grammar (Free Sampling)</div>
+        <div class="ibb">
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <span style="background:var(--lg);border:1px solid var(--green);border-radius:3px;padding:2px 6px;font-size:11px">positive</span>
+            <span style="background:var(--y2);border:1px solid var(--gold);border-radius:3px;padding:2px 6px;font-size:11px">maybe</span>
+            <span style="background:var(--lr);border:1px solid var(--red);border-radius:3px;padding:2px 6px;font-size:11px">not sure</span>
+            <span style="background:var(--lb);border:1px solid var(--blue);border-radius:3px;padding:2px 6px;font-size:11px">great</span>
+          </div>
+          <div class="sm mt3 rt">❌ Can output anything — unreliable</div>
+        </div>
+      </div>
+      <div class="ib">
+        <div class="ibh gn">With Grammar (Constrained)</div>
+        <div class="ibb">
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <span style="background:var(--lg);border:1px solid var(--green);border-radius:3px;padding:2px 6px;font-size:11px">positive</span>
+            <span style="background:var(--y2);border:1px solid var(--gold);border-radius:3px;padding:2px 6px;font-size:11px">neutral</span>
+            <span style="background:var(--lr);border:1px solid var(--red);border-radius:3px;padding:2px 6px;font-size:11px">negative</span>
+          </div>
+          <div class="sm mt3 gt">✅ Only valid tokens — reliable</div>
+        </div>
+      </div>
+<pre style="margin-top:5px">llm.create_chat_completion(
+  messages=[...],
+  response_format={<span class="str">"type"</span>: <span class="str">"json_object"</span>},
+)</pre>
+    </div>
+  </div>
+
+  <!-- 17. TREE & VALIDATION WITH LLMs -->
+  <div class="card c15">
+    <div class="ch">17. Tree &amp; Validation with LLMs</div>
+    <div class="cb">
+      <div class="sm mb3">Use the model to validate its own output.</div>
+      <div class="flow mb3">
+        <div class="fn" style="font-size:10px">Generated<br>Output</div><div class="fa">→</div>
+        <div class="fn dk" style="font-size:10px">LLM<br>Verifier<br>Prompt</div><div class="fa">→</div>
+        <div style="text-align:center;font-size:11px">Valid?<br>Yes/No</div>
+      </div>
+      <div style="display:flex;gap:4px">
+        <div class="fn gn" style="flex:1;font-size:10px">✅ Valid → Use</div>
+        <div class="fa">|</div>
+        <div class="fn rd" style="flex:1;font-size:10px">❌ Invalid → Regenerate / Fix</div>
+      </div>
+      <div class="b sm mt5 mb3">Validation Criteria Examples</div>
+      <ul class="ck">
+        <li>Follows format (JSON, CSV, etc.)</li>
+        <li>Contains required fields</li>
+        <li>Information is factually consistent</li>
+        <li>Free from restricted content</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 18. PRACTICAL PYTHON EXAMPLE (GRANULAR CONTROL) -->
+  <div class="card c2">
+    <div class="ch">18. Practical Python Example (Granular Control)</div>
+    <div class="cb">
+      <div class="sm mb3">Using llama-cpp-python with JSON grammar</div>
+<pre><span class="kw">from</span> llama_cpp <span class="kw">import</span> Llama
+
+llm = Llama.from_pretrained(
+    repo_id=<span class="str">"microsoft/Phi-3-mini-4k-instruct-gguf"</span>,
+    filename=<span class="str">"*fp16.gguf"</span>, n_gpu_layers=-<span class="nm">1</span>, n_ctx=<span class="nm">2048</span>
+)
+
+output = llm.create_chat_completion(
+  messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>,
+    <span class="str">"content"</span>: <span class="str">"Create a warrior for an RPG game in JSON format."</span>}],
+  response_format={<span class="str">"type"</span>: <span class="str">"json_object"</span>},
+)
+
+print(json.dumps(json.loads(
+  output[<span class="str">"choices"</span>][<span class="nm">0</span>][<span class="str">"message"</span>][<span class="str">"content"</span>]),
+  indent=<span class="nm">4</span>))</pre>
+    </div>
+  </div>
+
+  <!-- 19. BEST PRACTICES & TIPS -->
+  <div class="card">
+    <div class="ch or">19. Best Practices &amp; Tips</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="st">Be specific &amp; clear in instructions.</li>
+        <li class="st">Provide context and examples.</li>
+        <li class="st">Use CoT for complex tasks.</li>
+        <li class="st">Control randomness for consistency.</li>
+        <li class="st">Track experiments &amp; results.</li>
+        <li class="st">Validate critical outputs.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 6 -->
+<div class="row">
+  <!-- 20. KEY TAKEAWAYS -->
+  <div class="card c3">
+    <div class="ch or">20. Key Takeaways</div>
+    <div class="cb">
+      <div class="three">
+        <ul class="ck">
+          <li class="st">Good prompts guide better outputs.</li>
+          <li class="st">Use examples + context effectively.</li>
+        </ul>
+        <ul class="ck">
+          <li class="st">Control randomness for reliability.</li>
+          <li class="st">Reasoning techniques boost performance.</li>
+        </ul>
+        <ul class="ck">
+          <li class="st">Verify &amp; validate before production.</li>
+          <li class="st">Prompt engineering is iterative, creative &amp; highly impactful!</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 21. WHERE WE ARE GOING NEXT -->
+  <div class="card c2">
+    <div class="ch or">21. Where We Are Going Next</div>
+    <div class="cb">
+      <div style="font-size:13px;color:var(--navy);font-weight:700;line-height:1.6">
+        Next: Chapter 7 — Building LLM Applications<br>
+        We'll combine prompts, memory, tools, and more to build powerful LLM-powered systems!
+      </div>
+      <div style="text-align:center;font-size:36px;margin-top:8px">🚀</div>
+    </div>
+  </div>
+</div>
+
+<div class="bb">
+  <strong>Prompt engineering</strong> is iterative, creative &amp; highly impactful! 🎯
+</div>
+
+</div>
+</body>
+</html>

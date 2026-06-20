@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 1: An Introduction to Large Language Models (LLMs)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Source+Code+Pro:wght@400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a2744;--navy2:#1e3060;--orange:#e8a020;--orange2:#f5b830;--blue:#2255cc;--blue2:#3366dd;--light-blue:#dce8ff;--light-blue2:#eaf0ff;--yellow:#fff3b0;--yellow2:#fffae0;--green:#2a7a3b;--light-green:#e8f5eb;--red:#cc2222;--light-red:#fdecea;--gray:#f4f6fb;--border:#b8c8e8;--text:#1a2030;--code-bg:#1e2a40;--code-text:#e8f0ff;--gold:#c8960c}
+body{font-family:'Nunito',sans-serif;background:#e8ecf8;color:var(--text);font-size:13px;line-height:1.5}
+.header{background:var(--navy);color:white;text-align:center;padding:16px 24px 12px;border-bottom:4px solid var(--orange)}
+.header-inner{display:flex;align-items:center;justify-content:center;gap:14px}
+.header h1{font-size:24px;font-weight:900;line-height:1.1}
+.header h1 span{color:var(--orange)}
+.header p{font-size:12.5px;color:#c8d4f0;max-width:800px;margin:4px auto 0}
+.page{max-width:1440px;margin:0 auto;padding:8px 8px 20px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:8px}
+.row>*{flex:1;min-width:0}
+.col2{flex:2}.col3{flex:3}
+.card{background:white;border:1.5px solid var(--border);border-radius:7px;overflow:hidden}
+.ch{background:var(--navy);color:white;font-size:11.5px;font-weight:800;padding:5px 9px;text-transform:uppercase;letter-spacing:.4px}
+.ch.orange{background:var(--orange);color:var(--navy)}
+.ch.red{background:var(--red)}
+.cb{padding:9px}
+ul.ck{list-style:none}
+ul.ck li{display:flex;gap:6px;align-items:flex-start;margin-bottom:4px;font-size:12px}
+ul.ck li::before{content:"✅";font-size:10px;margin-top:2px;flex-shrink:0}
+ul.ck li.dot::before{content:"•";font-size:14px;color:var(--navy);margin-top:0}
+ul.ck li.warn::before{content:"⚠️"}
+ol.nl{counter-reset:n;list-style:none}
+ol.nl li{counter-increment:n;display:flex;gap:7px;margin-bottom:5px;font-size:12px}
+ol.nl li::before{content:counter(n);background:var(--navy);color:white;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;margin-top:1px}
+.flow{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:5px 0}
+.fn{background:var(--light-blue);border:1.5px solid var(--blue);border-radius:5px;padding:4px 8px;font-size:11px;font-weight:700;text-align:center}
+.fn.dark{background:var(--navy);color:white;border-color:var(--navy)}
+.fn.green{background:var(--light-green);border-color:var(--green)}
+.fa{font-size:14px;color:#555;font-weight:900}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th{background:var(--navy);color:white;padding:4px 7px;text-align:left;font-weight:700;font-size:11px}
+td{padding:3px 7px;border-bottom:1px solid #dde4f0;vertical-align:top}
+tr:nth-child(even) td{background:var(--gray)}
+.tip{background:var(--yellow2);border:1.5px solid var(--gold);border-radius:5px;padding:6px 8px;font-size:11.5px;margin-top:5px}
+.tip strong{color:var(--navy)}
+.tkw{background:var(--yellow);border:2px solid var(--gold);border-radius:6px;padding:8px;margin-top:6px;font-size:12px}
+.tkw-title{font-weight:800;color:var(--navy);margin-bottom:3px}
+.bold{font-weight:800}.small{font-size:11px}.tiny{font-size:10.5px}
+.mt4{margin-top:4px}.mt6{margin-top:6px}.mb4{margin-bottom:4px}.mb6{margin-bottom:6px}
+.navy{color:var(--navy)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.timeline{display:flex;flex-direction:column;gap:3px}
+.tl-item{display:flex;gap:8px;align-items:flex-start;font-size:11.5px}
+.tl-year{background:var(--navy);color:white;font-weight:800;font-size:10.5px;padding:2px 6px;border-radius:3px;flex-shrink:0;min-width:38px;text-align:center}
+.arch-item{background:var(--gray);border:1.5px solid var(--border);border-radius:5px;padding:6px;font-size:11px;margin-bottom:4px}
+.arch-title{font-weight:800;font-size:12px;color:var(--navy);margin-bottom:2px}
+.lock-row{display:flex;gap:8px;margin-top:4px}
+.lock-box{flex:1;border:1.5px solid var(--border);border-radius:5px;padding:7px;font-size:11.5px;background:var(--gray)}
+.lock-box .lbh{font-weight:800;font-size:12px;color:var(--navy);margin-bottom:4px}
+.warn-item{display:flex;gap:6px;align-items:flex-start;margin-bottom:4px;font-size:12px}
+.bottom-banner{background:var(--navy);color:white;padding:10px 16px;border-radius:6px;font-size:12.5px;text-align:center;margin-top:4px}
+.bottom-banner strong{color:var(--orange2)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-inner">
+    <div style="font-size:48px">🤖</div>
+    <div>
+      <h1>CHAPTER 1: <span>AN INTRODUCTION TO LARGE LANGUAGE MODELS (LLMs)</span></h1>
+      <p>Goal of this chapter: Understand what LLMs are, how they work at a high level, their history, uses, and how to start using them.</p>
+    </div>
+    <div style="font-size:42px">🧠</div>
+  </div>
+</div>
+
+<div class="page">
+
+<div class="row">
+  <div class="card">
+    <div class="ch">1. What is Language AI?</div>
+    <div class="cb">
+      <div class="small mb4">A subfield of AI focused on enabling computers to understand, process, and generate human language.</div>
+      <div class="small mb4">It combines:</div>
+      <ul class="ck">
+        <li class="dot">Linguistics</li><li class="dot">Machine Learning</li><li class="dot">Deep Learning</li><li class="dot">Statistics</li>
+      </ul>
+      <div class="small mt4 mb4">Works with Natural Language Processing (NLP) techniques.</div>
+      <div class="tip"><strong>Example:</strong> Spam email detection, machine translation, chatbots.</div>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch">2. What is a Large Language Model (LLM)?</div>
+    <div class="cb">
+      <div class="small mb4">An LLM is an AI model trained on massive amounts of text data to understand and generate human-like text.</div>
+      <div class="tkw"><div class="tkw-title">💡 Key idea:</div>LLMs learn patterns in language from data, not from explicit programming rules.</div>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch">3. Common Use Cases &amp; Applications</div>
+    <div class="cb">
+      <ul class="ck">
+        <li>Content Generation (blog posts, stories, ads)</li>
+        <li>Question Answering (FAQs, knowledge bots)</li>
+        <li>Summarization (summarize articles, docs)</li>
+        <li>Translation (multi-language support)</li>
+        <li>Code Generation (autocomplete, snippets)</li>
+        <li>Data Extraction (from unstructured text)</li>
+        <li>Creative Writing, Chatbots, Tutoring, Brainstorming &amp; more</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch">4. How Can We Use an LLM Ourselves?</div>
+    <div class="cb">
+      <ul class="ck">
+        <li>Through an interface (chat/web UI) like ChatGPT, Claude, Gemini, …</li>
+        <li>Through an API (OpenAI API, Anthropic API, etc.)</li>
+        <li>Through local models (Download &amp; run on your machine)</li>
+        <li>Through frameworks &amp; libraries (Hugging Face, LangChain, LlamaIndex)</li>
+      </ul>
+      <div class="tip"><strong>Example:</strong> You can ask an LLM to summarize a long PDF using an API or a local model.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">5. A Recent History of Language AI</div>
+    <div class="cb">
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-year">2002</div><div>Bag-of-Words models</div></div>
+        <div class="tl-item"><div class="tl-year">2013</div><div>word2vec (dense vectors)</div></div>
+        <div class="tl-item"><div class="tl-year">2017</div><div>Attention is introduced</div></div>
+        <div class="tl-item"><div class="tl-year">2018</div><div>BERT (encoder model) / GPT (decoder model)</div></div>
+        <div class="tl-item"><div class="tl-year">2019</div><div>GPT-2</div></div>
+        <div class="tl-item"><div class="tl-year">2020</div><div>GPT-3, T5</div></div>
+        <div class="tl-item"><div class="tl-year">2021</div><div>Switch Transformer</div></div>
+        <div class="tl-item"><div class="tl-year">2022</div><div>ChatGPT, Flan-T5</div></div>
+        <div class="tl-item"><div class="tl-year">2023+</div><div>GPT-4, PaLM 2, Llama 2, Mistral, Claude, Gemini …</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="card col2">
+    <div class="ch">6. The Language AI Process</div>
+    <div class="cb">
+      <div class="flow mb6">
+        <div class="fn dark">Text Input</div><div class="fa">→</div>
+        <div class="fn">Language AI Process</div><div class="fa">→</div>
+        <div class="fn green">Text Output</div>
+      </div>
+      <div class="two">
+        <div>
+          <div class="bold small mb4">INPUT TEXT</div>
+          <div style="background:var(--light-blue);border:1.5px solid var(--blue);border-radius:5px;padding:6px;font-size:11.5px;font-style:italic">"The weather today is great!"</div>
+          <div class="small mt4 mb4"><div class="bold mb4">LANGUAGE AI PROCESS</div>• Understands the input<br>• Finds patterns &amp; context<br>• Generates or predicts output</div>
+        </div>
+        <div>
+          <div class="bold small mb4">OUTPUT TEXT (varies by task)</div>
+          <ul class="ck">
+            <li>Generation: "It's sunny and warm outside."</li>
+            <li>Classification: Positive</li>
+            <li>Extraction: {weather: good}</li>
+            <li>Translation: "Hace buen tiempo hoy."</li>
+          </ul>
+          <div class="bold small mt4 mb4">TASK TYPES</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;font-size:10.5px">
+            <span style="background:var(--navy);color:white;padding:2px 5px;border-radius:3px">Generation</span>
+            <span style="background:var(--navy);color:white;padding:2px 5px;border-radius:3px">Classification</span>
+            <span style="background:var(--navy);color:white;padding:2px 5px;border-radius:3px">Summarization</span>
+            <span style="background:var(--navy);color:white;padding:2px 5px;border-radius:3px">Translation</span>
+            <span style="background:var(--navy);color:white;padding:2px 5px;border-radius:3px">Extraction</span>
+            <span style="background:var(--navy);color:white;padding:2px 5px;border-radius:3px">More…</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch">7. Representing Language (Evolution)</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="bold small mb4 navy">7.1 Bag-of-Words (BoW)</div>
+          <div class="small mb4">Represents text by word counts. Ignores order &amp; context.</div>
+          <div class="small mb4"><strong>Example:</strong> "I love cats"</div>
+          <table><thead><tr><th>Word</th><th>Count</th></tr></thead><tbody>
+            <tr><td>I</td><td>1</td></tr><tr><td>love</td><td>1</td></tr><tr><td>cats</td><td>1</td></tr>
+            <tr><td>you</td><td>0</td></tr><tr><td>dog</td><td>0</td></tr>
+          </tbody></table>
+          <div class="small mt4" style="color:var(--red)">High-dimensional, Sparse, No context</div>
+        </div>
+        <div>
+          <div class="bold small mb4 navy">7.2 Better: Dense Vector (Embeddings)</div>
+          <div class="small mb4">Words/sentences are mapped to dense vectors that capture meaning.</div>
+          <div class="small mb4"><strong>Example:</strong> "I love cats"</div>
+          <div style="background:var(--light-blue);border:1.5px solid var(--blue);border-radius:5px;padding:6px;font-size:11px;font-family:monospace">[0.21, -0.83, 0.45, …, -0.12, 0.67, …]</div>
+          <div class="small mt4" style="color:var(--green)">Similar meanings are close together.</div>
+          <div class="small mt4 navy">Low-dimensional, Dense, Captures context</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card col3">
+    <div class="ch">8. Types of Models (By Architecture &amp; Purpose)</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="bold small mb4">8.1 By Architecture</div>
+          <div class="arch-item"><div class="arch-title">🔵 Encoder-only (BERT)</div>Understand text (great for classification, search, understanding)</div>
+          <div class="arch-item"><div class="arch-title">🟠 Decoder-only (GPT)</div>Generate text (great for text generation, chat, creative writing)</div>
+          <div class="arch-item"><div class="arch-title">🟢 Encoder-Decoder (T5)</div>Understand + Generate (great for translation, summarization)</div>
+        </div>
+        <div>
+          <div class="bold small mb4">8.2 By Purpose</div>
+          <div class="arch-item"><div class="arch-title">📖 Encoding-only models</div>(Understand / Represent text)</div>
+          <div class="arch-item"><div class="arch-title">✍️ Generative models</div>(Generate new text)</div>
+          <div class="arch-item"><div class="arch-title">🔄 Decoding-only models</div>(Generate text, e.g., GPT)</div>
+          <div class="arch-item"><div class="arch-title">🤖 Generative AI models</div>(Create new content — text, code, images, etc.)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="card col2">
+    <div class="ch">9. Attention: The Key Innovation</div>
+    <div class="cb">
+      <div class="small mb4">Attention allows the model to focus on the most relevant words in the input when making predictions.</div>
+      <div style="background:var(--light-blue2);border:1.5px solid var(--blue);border-radius:5px;padding:7px;font-size:12px;margin-bottom:6px">
+        <strong>Input:</strong> "The cat sat on the mat because it was tired."<br><br>
+        <div style="font-size:11.5px;margin-top:4px">The &nbsp;cat &nbsp;sat &nbsp;on &nbsp;the &nbsp;mat &nbsp;because &nbsp;<strong style="color:var(--blue2)">it</strong> &nbsp;was &nbsp;<strong style="color:var(--orange)">tired</strong></div>
+        <div style="font-size:11px;margin-top:5px"><strong>Output:</strong> "tired" (model focuses on relevant words)<br><strong>Result:</strong> Better understanding of context &amp; relationships.</div>
+      </div>
+      <div class="tip"><strong>💡</strong> Attention is what made Transformers (and LLMs) so powerful.</div>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch">10. Definition of Large Language Model</div>
+    <div class="cb">
+      <div class="small mb4">An LLM is a Transformer-based model trained on massive amounts of text data (billions of words) using self-supervised learning to understand and generate human-like text.</div>
+      <div class="bold small mb4">Characteristics:</div>
+      <ul class="ck">
+        <li>Billions of parameters</li><li>Trained on huge datasets</li>
+        <li>General-purpose (can do many tasks)</li><li>Can be adapted to specific tasks</li>
+      </ul>
+      <div class="tip mt4"><strong>Example:</strong> GPT-4, Claude 3, Llama 3, PaLM 2</div>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch">11. Training Paradigm of LLMs</div>
+    <div class="cb">
+      <div class="bold small mb4">Self-Supervised Learning (Next Token Prediction)</div>
+      <div class="flow mb4">
+        <div class="fn dark" style="font-size:11px">Input text:<br>"The sky is blue<br>and the grass is"</div>
+        <div class="fa">→</div><div class="fn" style="font-size:11px">Model</div><div class="fa">→</div>
+        <div class="fn green" style="font-size:11px">Predict next token:<br><strong>green</strong></div>
+      </div>
+      <div class="small mb4">The model learns by predicting the next word in massive amounts of text.</div>
+      <div class="bold small mb4">Steps:</div>
+      <ol class="nl">
+        <li>Collect large text data</li><li>Tokenize the text</li>
+        <li>Train the model to predict next token</li><li>Repeat on billions of tokens</li>
+      </ol>
+      <div class="tip mt4">Once trained, the model can be fine-tuned for specific tasks.</div>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch">12. LLM Applications (Real World)</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="dot"><strong>Business:</strong> Customer support bots, report generation, market analysis</li>
+        <li class="dot"><strong>Education:</strong> Tutoring, lesson plans, answer questions</li>
+        <li class="dot"><strong>Healthcare:</strong> Medical summaries, patient support (assist, not replace doctors)</li>
+        <li class="dot"><strong>Development:</strong> Code generation, debugging, documentation</li>
+        <li class="dot"><strong>Media &amp; Marketing:</strong> Content creation, SEO, social media posts</li>
+        <li class="dot"><strong>Personal Use:</strong> Writing help, productivity, learning, creativity</li>
+      </ul>
+      <div class="tkw mt4"><div class="tkw-title">🌍 Real-world example:</div>A marketer can generate 10 ad variations in seconds instead of hours.</div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="card col2">
+    <div class="ch">13. What Makes LLMs So Useful?</div>
+    <div class="cb">
+      <ul class="ck">
+        <li>Understand context deeply (thanks to attention)</li>
+        <li>Can learn from massive data</li>
+        <li>Generalize to many tasks (zero/few-shot learning)</li>
+        <li>Can be guided with prompts (no retraining needed)</li>
+        <li>Can generate human-like, coherent, creative text</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch">14. Responsible LLM Development &amp; Usage</div>
+    <div class="cb">
+      <ul class="ck">
+        <li>Be transparent about AI use</li><li>Avoid bias and unfair outputs</li>
+        <li>Protect user privacy &amp; data</li><li>Ensure safety (avoid harmful content)</li>
+        <li>Fact-check important outputs</li>
+        <li>Use AI to augment human capability, not replace human judgment</li>
+      </ul>
+      <div class="tip mt4"><strong>Example:</strong> Do not blindly trust AI facts. Always verify critical information.</div>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch red">15. Limitations &amp; Considerations</div>
+    <div class="cb">
+      <div class="warn-item"><span>⚠️</span><div><strong>Hallucinations:</strong> May generate incorrect information confidently.</div></div>
+      <div class="warn-item"><span>⚠️</span><div><strong>Bias:</strong> Reflects biases in training data.</div></div>
+      <div class="warn-item"><span>⚠️</span><div><strong>No real understanding:</strong> Predicts patterns, not true reasoning.</div></div>
+      <div class="warn-item"><span>⚠️</span><div><strong>Context window limits:</strong> Can only process limited text at once.</div></div>
+      <div class="warn-item"><span>⚠️</span><div><strong>Requires lots of compute &amp; energy.</strong></div></div>
+      <div class="warn-item"><span>⚠️</span><div><strong>Not always up-to-date</strong> (knowledge cutoff).</div></div>
+      <div class="tkw mt4"><div class="tkw-title">🔑 Key takeaway:</div>LLMs are powerful but not perfect. Use them wisely.</div>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch">16. Interfacing with an LLM</div>
+    <div class="cb">
+      <div class="bold small mb4">Ways to interact</div>
+      <div class="three mb4" style="gap:5px">
+        <div style="text-align:center;font-size:11.5px"><div style="font-size:22px;margin-bottom:2px">💻</div><div class="bold">Web UI</div><div class="small">(ChatGPT, Claude)</div></div>
+        <div style="text-align:center;font-size:11.5px"><div style="font-size:22px;margin-bottom:2px">🔌</div><div class="bold">API</div><div class="small">(OpenAI API)</div></div>
+        <div style="text-align:center;font-size:11.5px"><div style="font-size:22px;margin-bottom:2px">🖥️</div><div class="bold">Local Model</div><div class="small">(Your machine)</div></div>
+      </div>
+      <div style="text-align:center;font-size:11.5px;margin-bottom:6px"><div style="font-size:22px;margin-bottom:2px">🦜</div><div class="bold">Framework</div><div class="small">(Hugging Face)</div></div>
+      <div class="bold small mb4">Common operations</div>
+      <ul class="ck">
+        <li class="dot">Send prompt</li><li class="dot">Get response</li>
+        <li class="dot">Adjust parameters (temperature, max tokens)</li>
+        <li class="dot">Use system instructions</li><li class="dot">Chain operations</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="card col2">
+    <div class="ch">17. Properties: Private vs Open Models</div>
+    <div class="cb">
+      <div class="lock-row">
+        <div class="lock-box">
+          <div class="lbh">🔒 PRIVATE MODELS (CLOSED)</div>
+          <ul class="ck">
+            <li class="dot">Owned by companies</li><li class="dot">Access via API or platform</li>
+            <li class="dot">Not open source</li>
+            <li class="dot"><strong>Examples:</strong> GPT-4 (OpenAI), Claude (Anthropic), Gemini (Google)</li>
+          </ul>
+        </div>
+        <div class="lock-box">
+          <div class="lbh">🔓 OPEN MODELS (OPEN SOURCE)</div>
+          <ul class="ck">
+            <li class="dot">Open weights / open code</li><li class="dot">Can run locally or on cloud</li>
+            <li class="dot">Editable &amp; customizable</li>
+            <li class="dot"><strong>Examples:</strong> Llama 3, Mistral, Gemma, Falcon</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tip mt4">Both have trade-offs in control, cost, privacy, performance.</div>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch">18. Open Source Frameworks &amp; Ecosystem</div>
+    <div class="cb">
+      <div class="bold small mb4">Popular tools &amp; libraries:</div>
+      <ul class="ck">
+        <li>🤗 <strong>Hugging Face</strong> (Transformers, datasets)</li>
+        <li>🦙 <strong>LlamaIndex</strong> (for indexing &amp; RAG)</li>
+        <li>🦜 <strong>LangChain</strong> (for LLM apps &amp; agents)</li>
+        <li>🔥 <strong>PyTorch / TensorFlow</strong> (model training)</li>
+        <li>🖥️ <strong>vLLM, Ollama</strong> (run LLMs efficiently)</li>
+      </ul>
+      <div class="tip mt4">These tools help fine-tune, deploy &amp; connect LLMs easily.</div>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch orange">19. Generating Your First Text</div>
+    <div class="cb">
+      <ol class="nl">
+        <li><div><div class="bold">Write a Prompt</div><div class="small">e.g., "Write a short story about a robot."</div></div></li>
+        <li><div><div class="bold">Send to LLM</div><div class="small">(Use UI / API / Local model)</div></div></li>
+        <li><div><div class="bold">Get Response</div><div class="small">(LLM generates text token by token)</div></div></li>
+      </ol>
+      <div class="tip mt6">Experiment, iterate, and refine your prompts for better results!</div>
+    </div>
+  </div>
+
+  <div class="card col2">
+    <div class="ch orange">20. Key Takeaways of Chapter 1</div>
+    <div class="cb">
+      <ul class="ck">
+        <li>LLMs are AI models trained on huge text data.</li>
+        <li>They understand and generate text using patterns, not rules.</li>
+        <li>Built on Transformers with attention.</li>
+        <li>Can be used for many real-world tasks.</li>
+        <li>Powerful, but have limitations.</li>
+        <li>Use responsibly and stay informed.</li>
+      </ul>
+      <div class="tkw mt4"><div class="tkw-title">📌</div>This is the foundation. The next chapters will dive deeper into how they work!</div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="card col2">
+    <div class="ch">21. Further Resources</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="dot">Hugging Face Tokenizers Docs: <span style="color:var(--blue2)">huggingface.co/docs/tokenizers</span></li>
+        <li class="dot">Gensim (Embeddings): <span style="color:var(--blue2)">radimrehurek.com/gensim/</span></li>
+        <li class="dot">The Illustrated Word2Vec: <span style="color:var(--blue2)">jalammar.github.io/illustrated-word2vec/</span></li>
+        <li class="dot">ArXiv – BERT Paper: <span style="color:var(--blue2)">arxiv.org/abs/1810.04805</span></li>
+        <li class="dot">ArXiv – Word2Vec Paper: <span style="color:var(--blue2)">arxiv.org/abs/1301.3781</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="card col3">
+    <div class="ch orange">22. One-Line Summary</div>
+    <div class="cb">
+      <div style="font-size:14px;font-weight:700;color:var(--navy);line-height:1.6;padding:6px 0">
+        LLMs are advanced AI models that learn from massive text data using Transformers and attention to understand and generate human-like text, enabling a wide range of powerful real-world applications.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-banner">
+  <strong>One-Line Summary:</strong> LLMs are advanced AI models that learn from massive text data using Transformers and attention to understand, and generate human-like text, enabling a wide range of powerful real-world applications.
+</div>
+
+</div>
+</body>
+</html>

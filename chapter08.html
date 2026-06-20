@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 8: Semantic Search and Retrieval-Augmented Generation (RAG)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Source+Code+Pro:wght@400;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #1a2744;
+    --navy2: #1e3060;
+    --orange: #e8a020;
+    --orange2: #f5b830;
+    --blue: #2255cc;
+    --blue2: #3366dd;
+    --light-blue: #dce8ff;
+    --light-blue2: #eaf0ff;
+    --yellow: #fff3b0;
+    --yellow2: #fffae0;
+    --green: #2a7a3b;
+    --light-green: #e8f5eb;
+    --red: #cc2222;
+    --light-red: #fdecea;
+    --gray: #f4f6fb;
+    --border: #b8c8e8;
+    --text: #1a2030;
+    --code-bg: #1e2a40;
+    --code-text: #e8f0ff;
+    --gold: #c8960c;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: #e8ecf8;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--navy);
+    color: white;
+    text-align: center;
+    padding: 18px 24px 14px;
+    border-bottom: 4px solid var(--orange);
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 6px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+  }
+  .header h1 span { color: var(--orange); }
+  .header p {
+    font-size: 13.5px;
+    color: #c8d4f0;
+    max-width: 780px;
+    margin: 0 auto;
+  }
+  .robot-icon { font-size: 52px; line-height: 1; }
+  .brain-icon { font-size: 44px; }
+
+  /* ── GRID WRAPPER ── */
+  .page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 10px 10px 20px;
+    display: grid;
+    gap: 8px;
+  }
+
+  /* ── SECTION CARD ── */
+  .card {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .card-header {
+    background: var(--navy);
+    color: white;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 5px 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .card-header.orange { background: var(--orange); color: var(--navy); }
+  .card-header.blue { background: var(--blue2); }
+  .card-header.teal { background: #1a7070; }
+  .card-body { padding: 10px; }
+
+  /* ── ROW LAYOUTS ── */
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; min-width: 0; }
+  .col-2 { flex: 2; }
+  .col-3 { flex: 3; }
+
+  /* ── SECTION TITLE BADGES ── */
+  .sec-title {
+    background: var(--navy);
+    color: white;
+    font-weight: 800;
+    font-size: 11.5px;
+    padding: 4px 8px;
+    border-radius: 4px 4px 0 0;
+    letter-spacing: 0.3px;
+  }
+  .sec-title.orange { background: var(--orange); color: var(--navy); }
+  .sec-title.blue   { background: var(--blue2); }
+  .sec-title.green  { background: var(--green); }
+  .sec-title.red    { background: var(--red); }
+  .sec-title.teal   { background: #1a7070; }
+  .sec-title.purple { background: #6633aa; }
+
+  /* ── INNER SECTIONS ── */
+  .inner { border: 1.5px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .inner-body { padding: 8px; }
+
+  /* ── CHECK LIST ── */
+  .check-list { list-style: none; }
+  .check-list li { display: flex; gap: 6px; align-items: flex-start; margin-bottom: 4px; font-size: 12px; }
+  .check-list li::before { content: "✅"; font-size: 11px; margin-top: 1px; flex-shrink: 0; }
+  .check-list li.star::before { content: "⭐"; }
+  .check-list li.arrow::before { content: "➡️"; font-size: 10px; }
+
+  /* ── TAKEAWAY BOX ── */
+  .takeaway {
+    background: var(--yellow);
+    border: 2px solid var(--gold);
+    border-radius: 6px;
+    padding: 8px;
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  .takeaway-title {
+    display: flex; align-items: center; gap-5px;
+    font-weight: 800; font-size: 12px; color: var(--navy);
+    margin-bottom: 4px;
+  }
+
+  /* ── CATEGORY BLOCKS ── */
+  .cat-block { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .cat-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .cat-icon { font-size: 28px; flex-shrink: 0; }
+  .cat-label { font-weight: 800; font-size: 12.5px; color: var(--navy); }
+  .cat-desc { font-size: 11.5px; margin-top: 2px; color: #333; }
+
+  /* ── PIPELINE ── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin: 6px 0;
+  }
+  .pipe-box {
+    background: var(--light-blue);
+    border: 1.5px solid var(--blue);
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+  }
+  .pipe-box.green { background: var(--light-green); border-color: var(--green); }
+  .pipe-box.orange { background: #fff0d0; border-color: var(--orange); }
+  .pipe-arrow { color: var(--navy); font-weight: 900; font-size: 14px; }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  th { background: var(--navy); color: white; padding: 4px 7px; text-align: left; font-weight: 700; font-size: 11px; }
+  td { padding: 3px 7px; border-bottom: 1px solid #dde4f0; }
+  tr:nth-child(even) td { background: var(--gray); }
+  tr:hover td { background: var(--light-blue2); }
+
+  /* ── CODE BLOCKS ── */
+  pre, .code-block {
+    background: var(--code-bg);
+    color: var(--code-text);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 10.5px;
+    padding: 8px 10px;
+    border-radius: 5px;
+    overflow-x: auto;
+    line-height: 1.5;
+    margin: 4px 0;
+    white-space: pre;
+  }
+  .kw  { color: #79b8ff; }
+  .fn  { color: #b3d9ff; }
+  .str { color: #9ecbff; }
+  .cm  { color: #6a8099; font-style: italic; }
+  .num { color: #f8c555; }
+
+  /* ── STEP CIRCLES ── */
+  .steps { counter-reset: step; padding: 0; list-style: none; }
+  .steps li {
+    counter-increment: step;
+    display: flex; align-items: flex-start; gap: 7px;
+    margin-bottom: 5px; font-size: 12px;
+  }
+  .steps li::before {
+    content: counter(step);
+    background: var(--navy);
+    color: white;
+    border-radius: 50%;
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800;
+    flex-shrink: 0; margin-top: 1px;
+  }
+
+  /* ── BENEFITS / USE CASES ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .benefit-box, .usecase-box {
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 7px;
+    font-size: 11.5px;
+  }
+  .benefit-box { background: var(--light-green); border-color: #8fcca0; }
+  .usecase-box { background: var(--light-blue); border-color: var(--blue); }
+  .box-title { font-weight: 800; font-size: 12px; margin-bottom: 4px; }
+
+  /* ── TIP BOX ── */
+  .tip-box {
+    background: var(--yellow2);
+    border: 1.5px solid var(--gold);
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-size: 11.5px;
+    margin-top: 6px;
+  }
+  .tip-box strong { color: var(--navy); }
+
+  /* ── ANSWER BOX ── */
+  .answer-box {
+    background: #e8f4e8;
+    border: 1.5px solid #60b060;
+    border-radius: 5px;
+    padding: 7px;
+    font-size: 11.5px;
+    margin-top: 5px;
+  }
+  .answer-label { font-weight: 800; color: var(--green); margin-bottom: 3px; }
+
+  /* ── METRIC ROW ── */
+  .metric-badge {
+    display: inline-block;
+    background: var(--blue2);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-bottom: 3px;
+  }
+
+  /* ── DIVIDER ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
+
+  /* ── ICON LABELS ── */
+  .icon-label { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+
+  /* ── TOOL CARDS ── */
+  .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .tool-card {
+    border: 1.5px solid var(--border);
+    border-radius: 5px;
+    padding: 6px 8px;
+    background: var(--gray);
+    font-size: 11.5px;
+  }
+  .tool-name { font-weight: 800; color: var(--navy); font-size: 12.5px; }
+  .tool-desc { color: #444; margin-top: 1px; }
+
+  /* ── STAR BOX ── */
+  .star-box {
+    background: var(--yellow);
+    border: 2px solid var(--gold);
+    border-radius: 6px;
+    padding: 7px 9px;
+    font-size: 12px;
+    display: flex; gap: 6px; align-items: flex-start;
+    margin-top: 6px;
+  }
+
+  /* ── RERANK TABLE ── */
+  .rank-col { text-align: center; width: 40px; }
+
+  /* ── FOOTER SECTIONS ── */
+  .footer-bar {
+    background: var(--navy);
+    color: white;
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 6px;
+    margin-top: 8px;
+  }
+
+  /* ── QUERY REWRITE ── */
+  .rewrite-box {
+    background: var(--light-blue2);
+    border: 1.5px solid var(--blue);
+    border-radius: 5px;
+    padding: 7px;
+    font-size: 12px;
+    text-align: center;
+    margin: 4px 0;
+  }
+
+  /* ── RAGAS ── */
+  .ragas-item { margin-bottom: 6px; }
+  .ragas-title { font-weight: 700; font-size: 12px; color: var(--navy); }
+  .ragas-desc { font-size: 11.5px; color: #444; }
+
+  /* Spacing helpers */
+  .mt4 { margin-top: 4px; }
+  .mt6 { margin-top: 6px; }
+  .mt8 { margin-top: 8px; }
+  .mb4 { margin-bottom: 4px; }
+  .mb6 { margin-bottom: 6px; }
+  .bold { font-weight: 800; }
+  .small { font-size: 11px; }
+  .center { text-align: center; }
+  .navy { color: var(--navy); }
+  .orange-text { color: var(--orange); }
+  .green-text { color: var(--green); }
+
+  /* ── CHUNKING VISUAL ── */
+  .chunk-strip { display: flex; gap: 3px; align-items: center; margin: 4px 0; }
+  .chunk-seg {
+    height: 16px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+    padding: 0 4px;
+  }
+
+  /* ── FLOWCHART ── */
+  .flow { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin: 5px 0; }
+  .flow-node {
+    background: var(--light-blue);
+    border: 1.5px solid var(--blue);
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    min-width: 70px;
+  }
+  .flow-node.dark { background: var(--navy); color: white; border-color: var(--navy); }
+  .flow-node.green { background: var(--light-green); border-color: var(--green); }
+  .flow-node.orange { background: #fff0d0; border-color: var(--orange); }
+  .flow-arrow { font-size: 14px; color: #666; font-weight: 900; }
+
+  /* Striped sections */
+  .striped-row { display: flex; gap: 0; }
+  .striped-row > div { flex: 1; padding: 4px 6px; font-size: 11.5px; border-right: 1px solid var(--border); }
+  .striped-row > div:last-child { border-right: none; }
+  .striped-row.alt { background: var(--gray); }
+
+  /* ── POWER STACK ── */
+  .power-stack {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px;
+    background: var(--navy);
+    border-radius: 6px;
+    margin-top: 8px;
+  }
+  .stack-item {
+    background: var(--light-blue2);
+    border: 2px solid var(--blue);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--navy);
+    text-align: center;
+    min-width: 100px;
+  }
+  .stack-plus { color: var(--orange2); font-size: 22px; font-weight: 900; }
+  .stack-equals { color: var(--orange2); font-size: 22px; font-weight: 900; }
+  .stack-result {
+    background: var(--orange);
+    border-color: var(--gold);
+    color: var(--navy);
+    font-size: 13px;
+    min-width: 150px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ HEADER ══════════════ -->
+<div class="header">
+  <div class="header-top">
+    <div class="robot-icon">🤖</div>
+    <div>
+      <h1>CHAPTER 8: <span>SEMANTIC SEARCH AND RETRIEVAL-AUGMENTED GENERATION (RAG)</span></h1>
+      <p>Make LLMs smarter with search! We explore dense retrieval, reranking, and RAG systems<br>
+      to reduce hallucinations and deliver accurate, up-to-date, and trustworthy answers.</p>
+    </div>
+    <div class="brain-icon">🧠</div>
+  </div>
+</div>
+
+<!-- ══════════════ PAGE ══════════════ -->
+<div class="page">
+
+  <!-- ROW 1: 4 cards -->
+  <div class="row">
+
+    <!-- 1. WHAT YOU'LL LEARN -->
+    <div class="card">
+      <div class="card-header">1. What You'll Learn</div>
+      <div class="card-body">
+        <ul class="check-list">
+          <li>Dense retrieval (semantic search)</li>
+          <li>Rerankers for better relevance</li>
+          <li>RAG (Retrieval-Augmented Generation)</li>
+          <li>Chunking long texts</li>
+          <li>Evaluation metrics (MAP, nDCG)</li>
+          <li>RAG improvements &amp; techniques</li>
+        </ul>
+        <div class="takeaway">
+          <div class="takeaway-title">⭐ Key Takeaway</div>
+          Combine retrieval + generation = more factual, grounded, and reliable LLM applications.
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. OVERVIEW: 3 MAJOR CATEGORIES -->
+    <div class="card col-2">
+      <div class="card-header">2. Overview: 3 Major Categories</div>
+      <div class="card-body">
+        <div class="small bold mb4">Modern search systems powered by language models.</div>
+        <div class="cat-block">
+          <div class="cat-icon">🔵</div>
+          <div>
+            <div class="cat-label">Dense Retrieval</div>
+            <div class="cat-desc">Convert query &amp; docs to embeddings and retrieve nearest neighbors.</div>
+          </div>
+        </div>
+        <div class="cat-block">
+          <div class="cat-icon">🔀</div>
+          <div>
+            <div class="cat-label">Reranking</div>
+            <div class="cat-desc">Take top-k results and reorder them by relevance using an LLM.</div>
+          </div>
+        </div>
+        <div class="cat-block">
+          <div class="cat-icon">🤖</div>
+          <div>
+            <div class="cat-label">RAG (Retrieval-Augmented Generation)</div>
+            <div class="cat-desc">Retrieve relevant info and pass it to an LLM to generate a grounded answer (with citations).</div>
+          </div>
+        </div>
+        <div class="tip-box">
+          <strong>💡 Why LangChain?</strong><br>
+          • Abstractions for LLMs, prompts, memory, tools, chains, and more<br>
+          • Modular, extensible, works with many LLMs<br>
+          • Lets you build complex apps with minimal boilerplate
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. RAG SYSTEM AT A GLANCE -->
+    <div class="card col-2">
+      <div class="card-header">3. RAG System at a Glance</div>
+      <div class="card-body">
+        <div class="small bold mb4">Pipeline of a RAG system.</div>
+        <div class="flow mb6">
+          <div class="flow-node dark">User<br>Question</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node"><span style="font-size:10px">(semantic search)</span><br>Retrieve</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node green">Relevant<br>Documents<br><span style="font-size:10px">(Context)</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node orange">LLM<br><span style="font-size:10px">(Generate)</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node" style="background:#fff0d0;border-color:#e8a020;">Answer<br><span style="font-size:10px">(with sources)</span></div>
+        </div>
+        <div class="two-col mt4">
+          <div class="benefit-box">
+            <div class="box-title">✅ Benefits</div>
+            <ul class="check-list">
+              <li>Reduces hallucinations</li>
+              <li>Factual &amp; up-to-date answers</li>
+              <li>Grounded on specific data</li>
+              <li>Explainable with citations</li>
+            </ul>
+          </div>
+          <div class="usecase-box">
+            <div class="box-title">🔵 Use Cases</div>
+            <ul class="check-list">
+              <li class="arrow">Chat with your documents</li>
+              <li class="arrow">Enterprise knowledge bases</li>
+              <li class="arrow">Support bots</li>
+              <li class="arrow">Research &amp; summarization</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. TEXT GENERATION MODELS -->
+    <div class="card col-2">
+      <div class="card-header">4. Text Generation Models</div>
+      <div class="card-body">
+        <div class="small bold mb4">Foundation models come in many sizes.</div>
+        <table>
+          <thead>
+            <tr><th>Model Family</th><th>Developer</th><th>Sizes (Params)</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>GPT-4 / 3.5</strong></td><td>OpenAI</td><td>Up to 1.8T</td><td>Proprietary, very strong</td></tr>
+            <tr><td><strong>Llama 3</strong></td><td>Meta</td><td>8B – 70B</td><td>Open source</td></tr>
+            <tr><td><strong>Phi-3</strong></td><td>Microsoft</td><td>3.8B – 128B</td><td>Small &amp; efficient</td></tr>
+            <tr><td><strong>Mistral</strong></td><td>Mistral AI</td><td>7B – 8x22B</td><td>Open source</td></tr>
+            <tr><td><strong>Gemma</strong></td><td>Google</td><td>2B – 27B</td><td>Open source</td></tr>
+          </tbody>
+        </table>
+        <div class="tip-box mt6">
+          <strong>💡 Tip:</strong> Start with a small model, then scale up.<br>
+          Smaller models = faster, cheaper, easier to run.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /row1 -->
+
+  <!-- ══ DENSE SECTION HEADER ══ -->
+  <div style="background:var(--navy);color:white;text-align:center;padding:6px;border-radius:6px;font-weight:900;font-size:15px;letter-spacing:1px;">
+    ⚡ DENSE
+  </div>
+
+  <!-- ROW 2: Dense subsections -->
+  <div class="row">
+
+    <!-- 5.1 The Idea -->
+    <div class="card">
+      <div class="card-header">5.1 The Idea</div>
+      <div class="card-body">
+        <div class="bold mb4">Search by meaning, not keywords.</div>
+        <div class="center mt4 mb4">
+          <div class="flow-node dark" style="display:inline-block;margin-bottom:6px;">Query</div>
+          <div style="font-size:22px;color:var(--blue2);">⬇</div>
+          <div style="background:var(--light-blue);border:1.5px solid var(--blue);border-radius:50%;width:60px;height:60px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin:0 auto;">Embed<br>Space</div>
+        </div>
+        <div class="small mt4">
+          🔵 = Document embedding<br>
+          Nearby points = similar texts
+        </div>
+      </div>
+    </div>
+
+    <!-- 5.2 Pipeline -->
+    <div class="card">
+      <div class="card-header">5.2 Pipeline</div>
+      <div class="card-body">
+        <div class="small bold mb4">How dense retrieval works.</div>
+        <ol class="steps">
+          <li>Split documents into chunks</li>
+          <li>Embed chunks &amp; store in vector database / index</li>
+          <li>Embed query</li>
+          <li>Find nearest neighbors (similarity search)</li>
+          <li>Return top-k results</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- 5.3 Chunking Methods -->
+    <div class="card">
+      <div class="card-header">5.3 Chunking Methods</div>
+      <div class="card-body">
+        <div class="small bold mb4">Methods for splitting long texts.</div>
+        <ul class="check-list">
+          <li>By sentence</li>
+          <li>By paragraph</li>
+          <li>Fixed-size chunks (3–8 sentences)</li>
+          <li>Overlapping chunks (context across boundaries)</li>
+        </ul>
+        <div class="chunk-strip mt6">
+          <div class="chunk-seg" style="background:#3366dd;width:50px;">Seg 1</div>
+          <div class="chunk-seg" style="background:#cc5533;width:50px;">Seg 2</div>
+          <div class="chunk-seg" style="background:#2a7a3b;width:50px;">Seg 3</div>
+        </div>
+        <div class="tip-box">Overlap helps preserve context!</div>
+      </div>
+    </div>
+
+    <!-- 5.4 Embedding Search Example -->
+    <div class="card col-3">
+      <div class="card-header">5.4 Embedding Search Example (Wikipedia: Interstellar)</div>
+      <div class="card-body">
+        <div class="row">
+          <div>
+            <div class="bold small mb4">Step 1: Embed Documents</div>
+<pre><span class="cm"># Embed documents</span>
+response = co.embed(
+    texts=texts,
+    input_type=<span class="str">"search_document"</span>,
+).embeddings
+embeds = np.array(response)
+index = faiss.IndexFlatL2(embeds.shape[1])
+index.add(np.float32(embeds))
+
+<span class="cm"># Step 2: Search</span>
+query_emb = co.embed(
+    texts=[<span class="str">"how precise was the science"</span>],
+    input_type=<span class="str">"search_query"</span>).embeddings[0]
+D, I = index.search(np.float32([query_emb]), 3)</pre>
+          </div>
+          <div>
+            <div class="bold small mb4">Top Results (by distance)</div>
+            <table>
+              <thead><tr><th>Rank</th><th>Distance</th><th>Text (Truncated)</th></tr></thead>
+              <tbody>
+                <tr><td class="rank-col">1</td><td>10757.4</td><td>It has also received praise from many astronomers for its scientific accuracy...</td></tr>
+                <tr><td class="rank-col">2</td><td>11566.1</td><td>Kip Thorne was an executive producer, acted as scientific consultant...</td></tr>
+                <tr><td class="rank-col">3</td><td>11922.8</td><td>Interstellar uses extensive practical and miniature effects...</td></tr>
+              </tbody>
+            </table>
+            <div class="tip-box mt4">🔍 Dense retrieval works even when keywords don't match!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /row2 -->
+
+  <!-- ROW 3: Reranking + RAG + Chunking & Indexing -->
+  <div class="row">
+
+    <!-- 6. RERANKING -->
+    <div class="card col-2">
+      <div class="card-header">6. Reranking (Re-Ordering Results)</div>
+      <div class="card-body">
+        <div class="small bold mb4">Rerankers compare query &amp; docs together → much better relevance.</div>
+        <div class="flow mb6">
+          <div class="flow-node dark">Query</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">Retriever<br><span style="font-size:10px">(Keyword / Dense)</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node orange">Top-k Results<br><span style="font-size:10px">(shortlist)</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node" style="background:#f0e0ff;border-color:#8040cc;">Reranker<br><span style="font-size:10px">(LLM)</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node green">Re-ranked<br>Results</div>
+        </div>
+        <div class="two-col">
+          <div>
+            <div class="bold small mb4">Before Reranking (BM25)</div>
+            <table>
+              <thead><tr><th>Rank</th><th>Score</th><th>Text (Truncated)</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>1.789</td><td>Interstellar is a 2014 epic science fiction film...</td></tr>
+                <tr><td>2</td><td>1.373</td><td>Kip Thorne was an executive producer, acted as...</td></tr>
+                <tr><td>3</td><td>0.000</td><td>Interstellar uses extensive practical and miniature...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <div class="bold small mb4">After Reranking (co.rerank)</div>
+            <table>
+              <thead><tr><th>Rank</th><th>Score</th><th>Text (Truncated)</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>0.170</td><td>It has also received praise from many astronomers...</td></tr>
+                <tr><td>2</td><td>0.070</td><td>The film had a worldwide gross of over $677 million...</td></tr>
+                <tr><td>3</td><td>0.004</td><td>Kip Thorne was an executive producer, acted as...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="star-box mt4">⭐ Rerankers use cross-encoder docs together: they see query + doc together.</div>
+      </div>
+    </div>
+
+    <!-- 7. RAG -->
+    <div class="card col-2">
+      <div class="card-header">7. RAG (Retrieval-Augmented Generation)</div>
+      <div class="card-body">
+        <div class="small bold mb4">Retrieve info, then generate grounded answers.</div>
+        <div class="flow mb4">
+          <div class="flow-node dark">Query</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node orange">Top-k Docs</div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node" style="background:#f0f0ff;border-color:#6633aa;">Context + Query<br><span style="font-size:10px">(Inject)</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node" style="background:#e0e8ff;border-color:var(--blue2);">LLM<br><span style="font-size:10px">(Generate)</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node green">Answer<br><span style="font-size:10px">(+ Citations)</span></div>
+        </div>
+        <div class="bold small mb4">Example (Cohere RAG)</div>
+<pre>results = co.rerank(query=query, documents=texts, top_n=3,
+                   return_documents=<span class="kw">True</span>)
+docs = [{<span class="str">"text"</span>: doc.document.text} <span class="kw">for</span> doc <span class="kw">in</span> results.results]
+response = co.chat(message=query, documents=docs)</pre>
+        <div class="answer-box">
+          <div class="answer-label">Answer:</div>
+          The film generated a worldwide gross of over $677 million, or $773 million with subsequent re-releases. (Citations → doc_0)
+        </div>
+        <div class="row mt6" style="gap:6px;flex-wrap:wrap;">
+          <div style="text-align:center;font-size:11px;flex:1"><div style="font-size:22px;">🧠</div>Reduces<br>hallucinations</div>
+          <div style="text-align:center;font-size:11px;flex:1"><div style="font-size:22px;">📅</div>Up-to-date<br>information</div>
+          <div style="text-align:center;font-size:11px;flex:1"><div style="font-size:22px;">✅</div>Grounded<br>answers</div>
+          <div style="text-align:center;font-size:11px;flex:1"><div style="font-size:22px;">📄</div>Citable<br>sources</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. CHUNKING & INDEXING -->
+    <div class="card">
+      <div class="card-header">8. Chunking &amp; Indexing</div>
+      <div class="card-body">
+        <div class="row mb4" style="gap:8px;">
+          <div style="flex:1">
+            <div class="bold small mb4">Chunking Strategies</div>
+            <ul class="check-list">
+              <li>By sentence</li>
+              <li>By paragraph</li>
+              <li>Fixed-size (3–8 sentences)</li>
+              <li>Overlapping (retain context)</li>
+            </ul>
+          </div>
+          <div style="flex:1">
+            <div class="bold small mb4">Indexing Options</div>
+            <ul class="check-list">
+              <li>NumPy (small corpora)</li>
+              <li>ANN libraries (FAISS, Annoy)</li>
+              <li>Vector databases (Weaviate, Pinecone)</li>
+            </ul>
+          </div>
+        </div>
+        <div style="background:var(--light-blue);border:1.5px solid var(--blue);border-radius:5px;padding:6px;font-size:11px;margin:4px 0;">
+          <div style="display:flex;gap:2px;margin-bottom:3px;">
+            <div style="flex:1;height:12px;background:#3366dd;border-radius:2px;"></div>
+            <div style="flex:1;height:12px;background:#cc5533;border-radius:2px;"></div>
+            <div style="flex:1;height:12px;background:#2a7a3b;border-radius:2px;"></div>
+          </div>
+          <div style="display:flex;gap:2px;">
+            <div style="flex:0.6;height:12px;background:#3366dd;opacity:0.6;border-radius:2px;"></div>
+            <div style="flex:1.2;height:12px;background:#cc5533;opacity:0.6;border-radius:2px;"></div>
+            <div style="flex:0.6;height:12px;background:#2a7a3b;opacity:0.6;border-radius:2px;"></div>
+          </div>
+        </div>
+        <div class="tip-box mt4">
+          <strong>Tips</strong><br>
+          ✅ Smaller chunks → more precise results<br>
+          ✅ Larger chunks → more context<br>
+          ✅ Overlapping improves recall<br>
+          ✅ Choose based on your data &amp; queries
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /row3 -->
+
+  <!-- ROW 4: Advanced RAG + Evaluation -->
+  <div class="row">
+
+    <!-- 9. ADVANCED RAG TECHNIQUES -->
+    <div class="card col-3">
+      <div class="card-header">9. Advanced RAG Techniques</div>
+      <div class="card-body">
+        <div class="row" style="gap:8px;">
+          <!-- 9.1 -->
+          <div style="flex:1">
+            <div class="bold small mb4 navy">9.1 Query Rewriting</div>
+            <div class="small mb4">Rewrite queries to improve retrieval.</div>
+            <div class="rewrite-box">
+              User: <em>"We have an essay due tomorrow… Where do dolphins live for example?"</em>
+            </div>
+            <div style="font-size:18px;text-align:center;color:var(--navy);margin:3px 0;">⬇</div>
+            <div class="rewrite-box" style="background:#e8f5e8;border-color:var(--green);">
+              Rewritten: <em>"Where do dolphins live?"</em>
+            </div>
+          </div>
+          <!-- 9.2 -->
+          <div style="flex:1">
+            <div class="bold small mb4 navy">9.2 Multi-Hop RAG</div>
+            <div class="small mb4">Generate multiple queries.</div>
+            <div style="background:var(--light-blue2);border:1.5px solid var(--blue);border-radius:5px;padding:6px;font-size:11px;">
+              User: <em>"Compare car manufacturers in 2003? Do they each do nocs? Make EVs or not?"</em><br><br>
+              Step 1: "largest car manufacturers 2023"<br>
+              → Toyota, Volkswagen, Hyundai<br><br>
+              Step 2: "Toyota electric vehicles"<br>
+              Step 2: "Volkswagen electric vehicles"<br>
+              Step 2: "Hyundai electric vehicles"
+            </div>
+          </div>
+          <!-- 9.4 -->
+          <div style="flex:1">
+            <div class="bold small mb4 navy">9.4 Query Routing</div>
+            <div class="small mb4">Route to right data source.</div>
+            <div style="font-size:11.5px;">
+              <div style="background:#f0e8ff;border:1.5px solid #8040cc;border-radius:4px;padding:5px;margin-bottom:5px;">
+                <strong>Q about HR →</strong><br>Search HR system (Notion)
+              </div>
+              <div style="background:#e8f0ff;border:1.5px solid var(--blue);border-radius:4px;padding:5px;margin-bottom:5px;">
+                <strong>Q about customers →</strong><br>Search CRM (Salesforce)
+              </div>
+              <div style="background:#e8f5e8;border:1.5px solid var(--green);border-radius:4px;padding:5px;">
+                <strong>Q about docs →</strong><br>Search internal docs
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. EVALUATION -->
+    <div class="card col-2">
+      <div class="card-header">10. Evaluation</div>
+      <div class="card-body">
+        <div class="row" style="gap:8px;">
+          <div style="flex:1">
+            <div class="bold small mb4">10.1 IR Metrics</div>
+            <div style="font-size:11.5px;">
+              <div class="metric-badge">MAP (Mean Average Precision)</div>
+              <div class="small mb4">MAP (Mean Average of the Precision) — Average of precision@k across all queries.</div>
+              <div class="metric-badge">nDCG (Normalised Discounted CG)</div>
+              <div class="small mb4">Rewards relevant docs higher in the ranking.</div>
+            </div>
+            <table style="margin-top:4px;">
+              <thead><tr><th>Rank</th><th>Relevant?</th><th>Gain</th><th>nDCG</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td style="color:green">✅</td><td>1.00</td><td>1.00</td></tr>
+                <tr><td>2</td><td style="color:red">❌</td><td>0.00</td><td>0.63</td></tr>
+                <tr><td>3</td><td style="color:green">✅</td><td>0.50</td><td>0.35</td></tr>
+                <tr><td>4</td><td style="color:green">✅</td><td>0.33</td><td>0.20</td></tr>
+                <tr><td>...</td><td>...</td><td>...</td><td>...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="flex:1">
+            <div class="bold small mb4">10.2 RAG Evaluation (RAGAS Metrics)</div>
+            <div class="ragas-item">
+              <div class="ragas-title">🔵 Faithfulness</div>
+              <div class="ragas-desc">Answer consistent with context</div>
+            </div>
+            <div class="ragas-item">
+              <div class="ragas-title">🔵 Answer Relevance</div>
+              <div class="ragas-desc">How relevant is the answer?</div>
+            </div>
+            <div class="ragas-item">
+              <div class="ragas-title">🔵 Context Precision</div>
+              <div class="ragas-desc">How precise is retrieved context?</div>
+            </div>
+            <div class="ragas-item">
+              <div class="ragas-title">🔵 Context Recall</div>
+              <div class="ragas-desc">Is all relevant info retrieved?</div>
+            </div>
+            <div class="ragas-item">
+              <div class="ragas-title">🔵 Answer Correctness</div>
+              <div class="ragas-desc">Is the answer factually correct?</div>
+            </div>
+            <div class="tip-box mt4">Human evaluation = gold standard. LLM-as-a-Judge can automate.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /row4 -->
+
+  <!-- ROW 5: Hands-On Code Example -->
+  <div class="card">
+    <div class="card-header">11. Hands-On Code Example: Local RAG with LangChain</div>
+    <div class="card-body">
+      <div class="row" style="gap:8px;">
+
+        <!-- Step 1 -->
+        <div style="flex:1">
+          <div class="bold small mb4" style="color:var(--navy);">Step 1: Load Models</div>
+<pre><span class="kw">from</span> langchain <span class="kw">import</span> LlamaCpp
+<span class="kw">from</span> langchain <span class="kw">import</span> LlamaCpp
+<span class="kw">import</span> HuggingFaceEmbeddings
+
+llm = LlamaCpp(
+  model_path=<span class="str">"Phi-3-mini-4k-instruct-fp16.gguf"</span>,
+  n_gpu_layers=<span class="num">1</span>, max_tokens=<span class="num">500</span>, n_ctx=<span class="num">2048</span>
+)
+
+embeddings = HuggingFaceEmbeddings(
+  model_name=<span class="str">"thenlper/gte-small"</span>
+)</pre>
+        </div>
+
+        <!-- Step 2 -->
+        <div style="flex:1">
+          <div class="bold small mb4" style="color:var(--navy);">Step 2: Build Vector Index</div>
+<pre><span class="kw">from</span> langchain.vectorstores <span class="kw">import</span> FAISS
+
+texts = [...]  <span class="cm"># list of document chunks</span>
+
+db = FAISS.from_texts(texts, embeddings)
+retriever = db.as_retriever(search_kwargs={
+  <span class="str">"k"</span>: <span class="num">2</span>  <span class="cm"># top 3 results</span>
+})</pre>
+        </div>
+
+        <!-- Step 3 -->
+        <div style="flex:1">
+          <div class="bold small mb4" style="color:var(--navy);">Step 3: Prompt Template</div>
+<pre>template = <span class="str">"""[User]
+Relevant Information:
+{context}
+
+Provide a concise answer to the
+following question using the
+relevant information above:
+{question}[end]>
+[assistant]"""</span>
+
+prompt = PromptTemplate(
+  template=template,
+  input_variables=[<span class="str">"context"</span>, <span class="str">"question"</span>]
+)</pre>
+        </div>
+
+        <!-- Step 4 -->
+        <div style="flex:1">
+          <div class="bold small mb4" style="color:var(--navy);">Step 4: RAG Chain</div>
+<pre><span class="kw">from</span> langchain.chains <span class="kw">import</span> RetrievalQA
+
+rag = RetrievalQA.from_chain_type(
+  llm=llm,
+  chain_type=<span class="str">"stuff"</span>,
+  retriever=retriever,
+  return_source_documents=<span class="kw">True</span>,
+  chain_type_kwargs={<span class="str">"prompt"</span>: prompt}
+)</pre>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 6: Key Takeaways + Power Stack + Tools -->
+  <div class="row">
+
+    <!-- 12. KEY TAKEAWAYS -->
+    <div class="card col-2">
+      <div class="card-header">12. Key Takeaways</div>
+      <div class="card-body">
+        <ul class="check-list">
+          <li>Semantic search finds results by meaning.</li>
+          <li>Rerankers reorder top-k results → huge quality boost.</li>
+          <li>RAG combines retrieval + generation → factual &amp; grounded answers.</li>
+          <li>Chunking &amp; evaluation are critical.</li>
+          <li>These techniques power real-world LLM apps.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- THE POWER STACK -->
+    <div class="card col-3">
+      <div class="card-header orange">The Power Stack: Combine Everything</div>
+      <div class="card-body">
+        <div class="power-stack">
+          <div class="stack-item">🤖<br>Model I/O<br><span style="font-size:10px;font-weight:400">(Load &amp; Run)</span></div>
+          <div class="stack-plus">+</div>
+          <div class="stack-item">🧠<br>Memory<br><span style="font-size:10px;font-weight:400">(Remember)</span></div>
+          <div class="stack-plus">+</div>
+          <div class="stack-item">🔧<br>Agents &amp; Tools<br><span style="font-size:10px;font-weight:400">(Do More)</span></div>
+          <div class="stack-plus">+</div>
+          <div class="stack-item">🔗<br>Chains<br><span style="font-size:10px;font-weight:400">(Connect)</span></div>
+          <div class="stack-equals">=</div>
+          <div class="stack-item stack-result">⭐<br>Powerful, Reliable,<br>Real-World LLM Systems</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 13. COMMON TOOLS & LIBRARIES -->
+    <div class="card col-2">
+      <div class="card-header">13. Common Tools &amp; Libraries</div>
+      <div class="card-body">
+        <div class="tool-grid">
+          <div class="tool-card">
+            <div class="tool-name">🦜 LangChain</div>
+            <div class="tool-desc">Framework for LLM apps</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">🔷 Cohere</div>
+            <div class="tool-desc">Search + Rerank + Chat</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">⚡ FAISS</div>
+            <div class="tool-desc">Vector search</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">🤗 HuggingFace</div>
+            <div class="tool-desc">Models &amp; Embeddings</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">🌊 Weaviate / Pinecone</div>
+            <div class="tool-desc">Vector databases</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-name">🐼 NumPy / Pandas</div>
+            <div class="tool-desc">Data handling</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 14. NEXT UP -->
+    <div class="card">
+      <div class="card-header orange">14. Next Up</div>
+      <div class="card-body">
+        <div style="font-size:12px;">
+          In Chapter 9, we'll explore information extraction: how to pull structured data from unstructured text! 🚀
+        </div>
+        <div style="font-size:36px;text-align:center;margin-top:10px;">🚀</div>
+      </div>
+    </div>
+
+  </div><!-- /row6 -->
+
+</div><!-- /page -->
+
+</body>
+</html>

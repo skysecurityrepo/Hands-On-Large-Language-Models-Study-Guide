@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 3: Looking Inside Large Language Models</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Source+Code+Pro:wght@400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a2744;--navy2:#1e3060;--orange:#e8a020;--orange2:#f5b830;--blue:#2255cc;--blue2:#3366dd;--light-blue:#dce8ff;--light-blue2:#eaf0ff;--yellow:#fff3b0;--yellow2:#fffae0;--green:#2a7a3b;--light-green:#e8f5eb;--red:#cc2222;--light-red:#fdecea;--gray:#f4f6fb;--border:#b8c8e8;--text:#1a2030;--code-bg:#1e2a40;--code-text:#e8f0ff;--gold:#c8960c;--purple:#6633aa;--light-purple:#f0e8ff}
+body{font-family:'Nunito',sans-serif;background:#e8ecf8;color:var(--text);font-size:13px;line-height:1.5}
+.header{background:var(--navy);color:white;text-align:center;padding:16px 24px 12px;border-bottom:4px solid var(--orange)}
+.header-inner{display:flex;align-items:center;justify-content:center;gap:14px}
+.header h1{font-size:22px;font-weight:900;line-height:1.1}
+.header h1 span{color:var(--orange)}
+.header p{font-size:12px;color:#c8d4f0;max-width:900px;margin:4px auto 0}
+.page{max-width:1440px;margin:0 auto;padding:8px 8px 20px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:8px}
+.row>*{flex:1;min-width:0}
+.col2{flex:2}.col3{flex:3}
+.card{background:white;border:1.5px solid var(--border);border-radius:7px;overflow:hidden}
+.ch{background:var(--navy);color:white;font-size:11.5px;font-weight:800;padding:5px 9px;text-transform:uppercase;letter-spacing:.4px}
+.ch.orange{background:var(--orange);color:var(--navy)}
+.ch.green{background:var(--green)}
+.ch.blue{background:var(--blue2)}
+.ch.purple{background:var(--purple)}
+.cb{padding:9px}
+ul.ck{list-style:none}
+ul.ck li{display:flex;gap:6px;align-items:flex-start;margin-bottom:4px;font-size:12px}
+ul.ck li::before{content:"✅";font-size:10px;margin-top:2px;flex-shrink:0}
+ul.ck li.dot::before{content:"•";font-size:14px;color:var(--navy);margin-top:0}
+ul.ck li.x::before{content:"❌"}
+ul.ck li.arr::before{content:"➡️";font-size:10px}
+.flow{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:5px 0}
+.fn{background:var(--light-blue);border:1.5px solid var(--blue);border-radius:5px;padding:4px 8px;font-size:11px;font-weight:700;text-align:center}
+.fn.dark{background:var(--navy);color:white;border-color:var(--navy)}
+.fn.green{background:var(--light-green);border-color:var(--green)}
+.fn.orange{background:#fff0d0;border-color:var(--orange)}
+.fn.purple{background:var(--light-purple);border-color:var(--purple)}
+.fn.pink{background:#ffe0ee;border-color:#cc3366}
+.fn.yellow{background:var(--yellow);border-color:var(--gold)}
+.fa{font-size:14px;color:#555;font-weight:900}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th{background:var(--navy);color:white;padding:4px 7px;text-align:left;font-weight:700;font-size:11px}
+td{padding:3px 7px;border-bottom:1px solid #dde4f0;vertical-align:top}
+tr:nth-child(even) td{background:var(--gray)}
+pre{background:var(--code-bg);color:var(--code-text);font-family:'Source Code Pro',monospace;font-size:10.5px;padding:8px 10px;border-radius:5px;overflow-x:auto;line-height:1.5;margin:4px 0;white-space:pre}
+.kw{color:#79b8ff}.str{color:#9ecbff}.cm{color:#6a8099;font-style:italic}.num{color:#f8c555}
+.tip{background:var(--yellow2);border:1.5px solid var(--gold);border-radius:5px;padding:6px 8px;font-size:11.5px;margin-top:5px}
+.tip strong{color:var(--navy)}
+.tkw{background:var(--yellow);border:2px solid var(--gold);border-radius:6px;padding:8px;margin-top:6px;font-size:12px}
+.tkw-title{font-weight:800;color:var(--navy);margin-bottom:3px}
+.bold{font-weight:800}.small{font-size:11px}.tiny{font-size:10.5px}
+.mt4{margin-top:4px}.mt6{margin-top:6px}.mb4{margin-bottom:4px}.mb6{margin-bottom:6px}
+.center{text-align:center}
+.navy{color:var(--navy)}.green-t{color:var(--green)}.red-t{color:var(--red)}.orange-t{color:var(--orange)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.four{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px}
+.ibox{border:1.5px solid var(--border);border-radius:6px;overflow:hidden;margin-top:5px}
+.ibox-h{background:var(--navy2);color:white;font-size:11px;font-weight:700;padding:3px 8px}
+.ibox-h.orange{background:var(--orange);color:var(--navy)}
+.ibox-h.blue{background:var(--blue2)}
+.ibox-h.green{background:var(--green)}
+.ibox-h.purple{background:var(--purple)}
+.ibox-b{padding:7px;font-size:11.5px}
+.block-item{background:var(--gray);border:1.5px solid var(--border);border-radius:5px;padding:6px;font-size:11px;margin-bottom:4px}
+.block-title{font-weight:800;font-size:12px;color:var(--navy);margin-bottom:2px}
+.bottom-banner{background:var(--navy);color:white;padding:10px 16px;border-radius:6px;font-size:12.5px;text-align:center;margin-top:4px;line-height:1.6}
+.bottom-banner strong{color:var(--orange2)}
+.quote-box{background:var(--navy);color:white;border-radius:6px;padding:10px 16px;text-align:center;font-size:14px;font-weight:700;margin-top:4px;font-style:italic}
+.quote-box span{color:var(--orange2)}
+/* LEGEND */
+.legend-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;font-size:11px}
+.legend-item{display:flex;align-items:center;gap:3px}
+.legend-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0}
+/* MATRIX VIS */
+.matrix-row{display:flex;gap:2px;margin-bottom:2px}
+.mcel{width:18px;height:18px;border-radius:2px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
+/* PROB TABLE */
+.prob-row{display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:12px}
+.prob-bar{height:12px;background:var(--blue2);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-inner">
+    <div style="font-size:44px">🤖</div>
+    <div>
+      <h1>CHAPTER 3: <span>LOOKING INSIDE LARGE LANGUAGE MODELS</span></h1>
+      <p>In this chapter, we demystify the Transformer architecture — the foundation of modern LLMs. We explore its components, how attention works, and how Transformers generate text efficiently.</p>
+    </div>
+    <div style="font-size:42px">🧠</div>
+  </div>
+</div>
+
+<div class="page">
+
+<!-- ROW 1 -->
+<div class="row">
+
+  <!-- 1. OVERVIEW OF THE TRANSFORMER MODEL -->
+  <div class="card col2">
+    <div class="ch">1. Overview of the Transformer Model</div>
+    <div class="cb">
+      <div class="small mb4">Transformers power LLMs. They take input tokens and output a probability distribution over the next token.</div>
+      <div class="two">
+        <div>
+          <div class="bold small mb4">INPUT (tokens)</div>
+          <div style="font-family:monospace;font-size:11.5px;background:var(--light-blue);border:1px solid var(--blue);border-radius:4px;padding:5px">The cat sat …</div>
+          <div style="text-align:center;font-size:18px;margin:4px 0">⬇</div>
+          <div style="background:var(--navy);color:white;border-radius:6px;padding:7px;text-align:center;font-size:12px;font-weight:800">TRANSFORMER<br>(Decoder-Only LLM)</div>
+          <div style="text-align:center;font-size:18px;margin:4px 0">⬇</div>
+          <div class="bold small mb4">OUTPUT (next token probabilities)</div>
+          <div style="font-size:11.5px">
+            <div class="prob-row"><span style="min-width:45px">on</span><div class="prob-bar" style="width:60px"></div><span>0.31</span></div>
+            <div class="prob-row"><span style="min-width:45px">by</span><div class="prob-bar" style="width:20px"></div><span>0.09</span></div>
+            <div class="prob-row"><span style="min-width:45px">the</span><div class="prob-bar" style="width:15px"></div><span>0.07</span></div>
+            <div class="prob-row"><span style="min-width:45px">…</span><div class="prob-bar" style="width:5px"></div><span>…</span></div>
+          </div>
+          <div class="small mt4">(vocabulary size)</div>
+        </div>
+        <div>
+          <div class="small mb4" style="color:var(--blue2)">During training: next token is known (teacher forcing).<br>During generation: next token is predicted and appended.</div>
+          <div style="background:var(--light-green);border:1.5px solid var(--green);border-radius:5px;padding:6px;font-size:11px;margin-top:8px">
+            <div class="bold mb4">Output: Base Model (Foundation Model)</div>
+            • Outputs probability distribution over vocabulary at each step.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. INPUT AND OUTPUT OF A TRAINED TRANSFORMER -->
+  <div class="card col2">
+    <div class="ch">2. Input and Output of a Trained Transformer (LLM)</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="bold small mb4">INPUT</div>
+          <div class="small mb4">Sequence of token IDs</div>
+          <div style="font-family:monospace;font-size:11px;background:var(--light-blue);border:1px solid var(--blue);border-radius:4px;padding:5px">5021<br>1037<br>318<br>…<br>[BOS]</div>
+        </div>
+        <div>
+          <div class="bold small mb4">OUTPUT</div>
+          <div class="small mb4">Probability distribution for next token</div>
+          <div style="font-family:monospace;font-size:11px;background:var(--light-green);border:1px solid var(--green);border-radius:4px;padding:5px">
+            on → 0.31<br>by → 0.09<br>there → 0.07<br>… → …
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--navy2);color:white;border-radius:5px;padding:7px;font-size:11.5px;text-align:center;margin-top:6px">
+        TRAINED TRANSFORMER<br>(LLM)
+      </div>
+      <div class="tip mt4">At each generation step, the model outputs a probability distribution over the entire vocabulary.</div>
+    </div>
+  </div>
+
+  <!-- 3. COMPONENTS OF THE FORWARD PASS -->
+  <div class="card col3">
+    <div class="ch">3. Components of the Forward Pass</div>
+    <div class="cb">
+      <div class="small mb4">For a single forward pass (training or inference):</div>
+      <div class="flow mb4">
+        <div class="fn">Input<br>Embeddings</div><div class="fa">+</div>
+        <div class="fn orange">Positional<br>Encoding</div><div class="fa">→</div>
+        <div class="fn dark">Transformer<br>Blocks<br>(Stacked L×)</div><div class="fa">→</div>
+        <div class="fn">Final<br>Layer Norm<br>(LM Head)</div><div class="fa">→</div>
+        <div class="fn green">Output<br>Probabilities</div>
+      </div>
+      <div class="bold small mb4">Inside each Transformer Block:</div>
+      <div class="flow">
+        <div class="fn">Layer<br>Norm</div><div class="fa">→</div>
+        <div class="fn purple">Self-Attention</div><div class="fa">→</div>
+        <div class="fn orange">Add<br>&amp; Norm</div><div class="fa">→</div>
+        <div class="fn green">Feed Forward<br>Network</div><div class="fa">→</div>
+        <div class="fn orange">Add<br>&amp; Norm</div>
+      </div>
+      <div class="tip mt4">Residual connections (Add &amp; Norm) help with training deep models.</div>
+      <div class="legend-row mt4">
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--light-blue)"></div>Data / Vectors</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#f8c555"></div>Operation</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--light-green)"></div>Module</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#ffe0ee"></div>Normalization</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--yellow)"></div>Other</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /row1 -->
+
+<!-- ROW 2 -->
+<div class="row">
+
+  <!-- 4. CHOOSING A SINGLE TOKEN: FROM PROBABILITIES TO TOKEN -->
+  <div class="card col2">
+    <div class="ch">4. Choosing a Single Token: From Probabilities to Token</div>
+    <div class="cb">
+      <div class="small mb4">The model outputs probabilities. We must choose one token.</div>
+      <div class="two">
+        <div>
+          <div class="bold small mb4">Probability Distribution (example)</div>
+          <div style="font-size:11.5px">
+            <div class="prob-row"><span style="min-width:55px">on</span><div class="prob-bar" style="width:55px"></div><span>0.31</span></div>
+            <div class="prob-row"><span style="min-width:55px">by</span><div class="prob-bar" style="width:17px"></div><span>0.09</span></div>
+            <div class="prob-row"><span style="min-width:55px">there</span><div class="prob-bar" style="width:13px"></div><span>0.07</span></div>
+            <div class="prob-row"><span style="min-width:55px">with</span><div class="prob-bar" style="width:11px"></div><span>0.06</span></div>
+            <div class="prob-row"><span style="min-width:55px">in</span><div class="prob-bar" style="width:9px"></div><span>0.05</span></div>
+            <div class="prob-row"><span style="min-width:55px">…</span><div class="prob-bar" style="width:5px"></div><span>…</span></div>
+          </div>
+          <div class="small mt4">(vocab size)</div>
+        </div>
+        <div>
+          <div class="bold small mb4">Sampling &amp; Decoding</div>
+          <div style="font-size:11.5px">
+            <div class="ibox mb4">
+              <div class="ibox-h green">Greedy (argmax)</div>
+              <div class="ibox-b">Pick highest probability.</div>
+            </div>
+            <div class="ibox mb4">
+              <div class="ibox-h blue">Top-k sampling</div>
+              <div class="ibox-b">Sample from top k tokens.</div>
+            </div>
+            <div class="ibox mb4">
+              <div class="ibox-h purple">Top-p (nucleus) sampling</div>
+              <div class="ibox-b">Sample from smallest set whose cumulative prob ≥ p.</div>
+            </div>
+            <div class="ibox">
+              <div class="ibox-h orange">Temperature</div>
+              <div class="ibox-b">Controls randomness (higher = more random).</div>
+            </div>
+          </div>
+          <div style="background:var(--light-blue);border:1.5px solid var(--blue);border-radius:5px;padding:5px;font-size:11px;margin-top:4px;text-align:center">
+            <strong>Chosen Token</strong><br><span style="font-size:16px;font-weight:900">on</span><br>(example)
+          </div>
+        </div>
+      </div>
+      <div class="tkw mt4"><div class="tkw-title">Takeaway:</div>Decoding strategy controls creativity vs determinism.</div>
+    </div>
+  </div>
+
+  <!-- 5. PARALLEL TOKEN PROCESSING & CONTEXT SIZE -->
+  <div class="card col2">
+    <div class="ch">5. Parallel Token Processing &amp; Context Size</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="bold small mb4">Parallel Token Processing</div>
+          <div class="small mb4">Transformers process all tokens in the input sequence simultaneously using attention.</div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;margin:6px 0">
+            <div style="background:var(--navy);color:white;border-radius:3px;padding:3px 5px;font-size:10.5px">The</div>
+            <div style="background:var(--blue2);color:white;border-radius:3px;padding:3px 5px;font-size:10.5px">cat</div>
+            <div style="background:var(--green);color:white;border-radius:3px;padding:3px 5px;font-size:10.5px">sat</div>
+            <div style="background:var(--orange);color:var(--navy);border-radius:3px;padding:3px 5px;font-size:10.5px">on</div>
+            <div style="background:var(--red);color:white;border-radius:3px;padding:3px 5px;font-size:10.5px">the</div>
+            <div style="background:var(--purple);color:white;border-radius:3px;padding:3px 5px;font-size:10.5px">mat</div>
+          </div>
+          <div class="small">All tokens attend to all other tokens.</div>
+        </div>
+        <div>
+          <div class="bold small mb4">Context Size (Sequence Length)</div>
+          <div class="small mb4">The maximum number of tokens the model can consider at once (e.g., 4K, 8K, 32K, 128K…).</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0">
+            <span style="background:var(--light-blue);border:1px solid var(--blue);border-radius:3px;padding:2px 6px;font-size:10.5px;font-weight:700">1K</span>
+            <span style="background:var(--light-blue);border:1px solid var(--blue);border-radius:3px;padding:2px 6px;font-size:10.5px;font-weight:700">4K</span>
+            <span style="background:var(--light-green);border:1px solid var(--green);border-radius:3px;padding:2px 6px;font-size:10.5px;font-weight:700">16K</span>
+            <span style="background:#fff0d0;border:1px solid var(--orange);border-radius:3px;padding:2px 6px;font-size:10.5px;font-weight:700">128K</span>
+          </div>
+          <div class="small mt4">Longer context = more memory and compute.<br>More context → Higher cost</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. SPEEDING UP GENERATION: KV CACHING -->
+  <div class="card col2">
+    <div class="ch">6. Speeding Up Generation: KV Caching</div>
+    <div class="cb">
+      <div class="small mb4">During generation, previous tokens don't change. We cache Key (K) and Value (V) states.</div>
+      <div class="two">
+        <div>
+          <div class="bold small mb4">Step t (generate token t)</div>
+          <div style="font-family:monospace;font-size:11px;background:var(--light-blue2);border:1px solid var(--blue);border-radius:4px;padding:5px">T₁ T₂ … Tₜ</div>
+          <div style="font-size:11px;margin-top:4px">Compute K, V<br>for all tokens</div>
+          <div style="display:flex;gap:4px;margin-top:4px">
+            <div style="background:var(--blue2);color:white;border-radius:3px;padding:3px 8px;font-size:11px;font-weight:700">K</div>
+            <div style="background:var(--green);color:white;border-radius:3px;padding:3px 8px;font-size:11px;font-weight:700">V</div>
+          </div>
+        </div>
+        <div>
+          <div class="bold small mb4">Step t+1 (generate token t+1)</div>
+          <div style="font-family:monospace;font-size:11px;background:var(--light-blue2);border:1px solid var(--blue);border-radius:4px;padding:5px">T₁ Tₜ … Tₜ T<sub>t+1</sub></div>
+          <div style="font-size:11px;margin-top:4px">Compute K, V<br>only for new token</div>
+          <div style="display:flex;gap:4px;margin-top:4px">
+            <div style="background:var(--blue2);color:white;border-radius:3px;padding:3px 8px;font-size:11px;font-weight:700">K<sub>new</sub></div>
+            <div style="background:var(--green);color:white;border-radius:3px;padding:3px 8px;font-size:11px;font-weight:700">V<sub>new</sub></div>
+          </div>
+        </div>
+      </div>
+      <div class="tip mt4">Reuse cached K, V from previous tokens → <strong>Much faster generation!</strong></div>
+    </div>
+  </div>
+
+</div><!-- /row2 -->
+
+<!-- ROW 3 -->
+<div class="row">
+
+  <!-- 7. INSIDE THE TRANSFORMER BLOCK -->
+  <div class="card" style="flex:3">
+    <div class="ch">7. Inside the Transformer Block</div>
+    <div class="cb">
+      <div class="three">
+        <!-- 7.1 -->
+        <div>
+          <div class="bold small mb4 navy">7.1 Feed Forward Neural Network (At a Glance)</div>
+          <div class="small mb4">Applied to each position independently.</div>
+          <div class="flow">
+            <div class="fn dark" style="font-size:10px">Input<br>(from attention)</div><div class="fa">→</div>
+            <div class="fn" style="font-size:10px">Linear<br>(d<sub>model</sub> → d<sub>ff</sub>)</div><div class="fa">→</div>
+            <div class="fn orange" style="font-size:10px">Activation<br>(GELU)</div><div class="fa">→</div>
+            <div class="fn" style="font-size:10px">Linear<br>(d<sub>ff</sub> → d<sub>model</sub>)</div><div class="fa">→</div>
+            <div class="fn green" style="font-size:10px">Output<br>(same length)</div>
+          </div>
+          <div class="small mt4">Typically d<sub>ff</sub> ≈ 4 × d<sub>model</sub></div>
+        </div>
+        <!-- 7.2 -->
+        <div>
+          <div class="bold small mb4 navy">7.2 Layer Norm (At a Glance)</div>
+          <div class="small mb4">Stabilizes training by normalizing across features.</div>
+          <div style="background:var(--light-blue2);border:1.5px solid var(--blue);border-radius:5px;padding:7px;font-size:11.5px;font-family:monospace">
+            For a vector x = {x₁, x₂, …, xₙ}:<br><br>
+            LayerNorm(x) = γ · <span style="font-size:13px">x − μ / √(σ² + ε)</span> + β
+          </div>
+          <ul class="ck mt4">
+            <li class="dot">μ = mean(x), σ² = variance(x)</li>
+            <li class="dot">γ (scale) and β (shift) are learned parameters.</li>
+          </ul>
+        </div>
+        <!-- 7.3 -->
+        <div>
+          <div class="bold small mb4 navy">7.3 Residual Connection (At a Glance)</div>
+          <div class="small mb4">Helps gradients flow and improves optimization.</div>
+          <div style="font-family:monospace;background:var(--light-blue2);border:1.5px solid var(--blue);border-radius:5px;padding:7px;font-size:12px">
+            y = LayerNorm(x + Sublayer(x))
+          </div>
+          <div class="flow mt4">
+            <div class="fn dark" style="font-size:10px">Input x</div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div class="fa">→</div>
+              <div style="font-size:10px">Sublayer</div>
+            </div>
+            <div style="font-size:18px;color:var(--navy);font-weight:900">⊕</div>
+            <div class="fa">→</div>
+            <div class="fn orange" style="font-size:10px">LayerNorm</div>
+            <div class="fa">→</div>
+            <div class="fn green" style="font-size:10px">Output y</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. ATTENTION IS ALL YOU NEED -->
+  <div class="card col2">
+    <div class="ch purple">8. Attention Is All You Need</div>
+    <div class="cb">
+      <div class="small mb4">Transformers rely on attention to mix information across the sequence.</div>
+      <div class="bold small mb4">Two main steps:</div>
+      <ol style="list-style:none;padding:0">
+        <li style="display:flex;gap:7px;margin-bottom:6px;font-size:12px">
+          <span style="background:var(--navy);color:white;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0">1</span>
+          <div>Score how relevant each previous token is to the current token.</div>
+        </li>
+        <li style="display:flex;gap:7px;margin-bottom:6px;font-size:12px">
+          <span style="background:var(--navy);color:white;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0">2</span>
+          <div>Use those scores to combine information from all positions into a single output vector.</div>
+        </li>
+      </ol>
+      <div class="tip">Attention allows the model to focus on the most relevant parts of the context.</div>
+    </div>
+  </div>
+
+</div><!-- /row3 -->
+
+<!-- ROW 4: ATTENTION MECHANISM -->
+<div class="row">
+  <div class="card" style="flex:4">
+    <div class="ch purple">9. Breaking Down the Attention Mechanism</div>
+    <div class="cb">
+      <div class="row" style="gap:8px">
+        <!-- 9.1 -->
+        <div style="flex:2">
+          <div class="bold small mb4">9.1 The Big Picture (Self-Attention)</div>
+          <div class="flow" style="align-items:flex-start">
+            <div>
+              <div class="bold small mb4 center">Input Embeddings</div>
+              <div style="font-size:11.5px;font-family:monospace">x₁<br>x₂<br>x₃<br>…<br>xₙ</div>
+            </div>
+            <div class="fa mt4">→</div>
+            <div>
+              <div class="bold small mb4 center">Linear projections</div>
+              <div style="display:flex;gap:3px">
+                <div style="background:var(--blue2);color:white;border-radius:3px;padding:2px 6px;font-size:11px;font-weight:800">Q</div>
+                <div style="background:var(--green);color:white;border-radius:3px;padding:2px 6px;font-size:11px;font-weight:800">K</div>
+                <div style="background:var(--orange);color:var(--navy);border-radius:3px;padding:2px 6px;font-size:11px;font-weight:800">V</div>
+              </div>
+            </div>
+            <div class="fa mt4">→</div>
+            <div>
+              <div class="bold small mb4 center">Attention Scores</div>
+              <div style="font-size:11px;font-family:monospace;background:var(--light-blue);border:1px solid var(--blue);border-radius:4px;padding:4px">QK<sup>T</sup>/√d<sub>k</sub></div>
+            </div>
+            <div class="fa mt4">→</div>
+            <div>
+              <div class="bold small mb4 center">Softmax Weights (row-wise)</div>
+              <div style="font-size:11px;font-family:monospace;background:var(--light-green);border:1px solid var(--green);border-radius:4px;padding:4px">Attention<br>Weights</div>
+            </div>
+            <div class="fa mt4">→</div>
+            <div>
+              <div class="bold small mb4 center">Weighted Sum (×V)</div>
+              <div style="font-size:11px;font-family:monospace;background:#fff0d0;border:1px solid var(--orange);border-radius:4px;padding:4px">z₁<br>z₂<br>…<br>zₙ</div>
+            </div>
+            <div class="fa mt4">→</div>
+            <div>
+              <div class="bold small mb4 center">Output</div>
+              <div style="font-size:11px;background:var(--navy);color:white;border-radius:4px;padding:4px">Output<br>Reps</div>
+            </div>
+          </div>
+          <div class="small mt4">Output at position i is a weighted sum of all values, based on how relevant they are.</div>
+        </div>
+        <!-- 9.2 -->
+        <div style="flex:1">
+          <div class="bold small mb4">9.2 How Attention Is Calculated</div>
+          <div class="ibox mb4">
+            <div class="ibox-h blue">1. Relevance Scoring</div>
+            <div class="ibox-b">
+              Score = QK<sup>T</sup> / √d<sub>k</sub><br>
+              <div class="small mt4">(higher = more relevant)</div>
+            </div>
+          </div>
+          <div class="ibox">
+            <div class="ibox-h green">2. Combining Information</div>
+            <div class="ibox-b">
+              Weights = softmax(Score)<br>
+              Output = Weights × V
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 5 -->
+<div class="row">
+
+  <!-- 10. RECENT IMPROVEMENTS -->
+  <div class="card" style="flex:4">
+    <div class="ch">10. Recent Improvements to the Transformer Architecture</div>
+    <div class="cb">
+      <div class="four">
+        <!-- 10.1 -->
+        <div>
+          <div class="bold small mb4 navy">10.1 More Effective Attention: Local / Sparse Attention</div>
+          <ul class="ck">
+            <li class="dot">Full attention is expensive for long sequences.</li>
+            <li class="dot">Sparse attention attends to a subset of tokens.</li>
+            <li class="dot">Local attention only attends to nearby tokens.</li>
+            <li class="dot">Reduces compute and memory.</li>
+            <li class="dot">Konstantina (more accuracy).</li>
+          </ul>
+          <div class="small mt4 bold">Full Attention &nbsp; Local Attention &nbsp; Sparse Attention</div>
+          <div style="display:flex;gap:4px;margin-top:4px">
+            <div style="width:30px;height:30px;background:var(--navy);border-radius:3px;opacity:0.9"></div>
+            <div style="width:30px;height:30px;background:var(--blue2);border-radius:3px;opacity:0.6"></div>
+            <div style="width:30px;height:30px;background:var(--light-blue);border:1px solid var(--blue);border-radius:3px;background:repeating-linear-gradient(45deg,var(--light-blue),var(--light-blue) 4px,var(--blue2) 4px,var(--blue2) 5px)"></div>
+          </div>
+        </div>
+        <!-- 10.2 -->
+        <div>
+          <div class="bold small mb4 navy">10.2 Multi-Query &amp; Group-Query Attention</div>
+          <ul class="ck">
+            <li class="dot"><strong>Multi-Head Attention (MHA):</strong> each head has its own K and V.</li>
+            <li class="dot"><strong>Multi-Query (MQA):</strong> all heads share the same K and V (only Q differs).</li>
+            <li class="dot"><strong>Group-Query (GQA):</strong> heads are grouped, each group shares K and V.</li>
+            <li class="dot">MQA/GQA reduce memory bandwidth and speed up inference.</li>
+          </ul>
+        </div>
+        <!-- 10.3 -->
+        <div>
+          <div class="bold small mb4 navy">10.3 Optimizing Attention: From MHA → MQA → GQA</div>
+          <table>
+            <thead><tr><th>Method</th><th>K/V Per Head</th><th>Memory</th><th>Speed</th><th>Quality (typical)</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Multi-Head (MHA)</strong></td><td>Separate</td><td>High</td><td>Baseline</td><td>Best</td></tr>
+              <tr><td><strong>Multi-Query (MQA)</strong></td><td>Shared</td><td>Low</td><td>Faster</td><td>Very Good</td></tr>
+              <tr><td><strong>Group-Query (GQA)</strong></td><td>Shared per group</td><td>Medium</td><td>Fast</td><td>Very Good</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- 10.4 -->
+        <div>
+          <div class="bold small mb4 navy">14. Flash Attention</div>
+          <ul class="ck">
+            <li class="dot">Standard attention reads/writes large matrices to memory.</li>
+            <li class="dot">FlashAttention computes attention in blocks, minimizing memory access.</li>
+            <li class="dot">Much faster and memory efficient, especially across domains.</li>
+          </ul>
+          <div class="small mt4"><strong>Standard Attention</strong><br>End-to-end large matrices<br><br>
+          <strong>Flash Attention</strong><br>Block by block in SRAM</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /row5 -->
+
+<!-- ROW 6 -->
+<div class="row">
+  <!-- 11. TRANSFORMER BLOCK RECAP -->
+  <div class="card">
+    <div class="ch">11. Transformer Block (Recap)</div>
+    <div class="cb">
+      <div class="small mb4">Each block contains:</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+        <div style="background:var(--light-blue);border:1.5px solid var(--blue);border-radius:5px;padding:5px 12px;font-size:11.5px;font-weight:700;text-align:center;margin-bottom:2px">Input</div>
+        <div style="font-size:12px;color:var(--navy)">⬇</div>
+        <div style="background:var(--light-purple);border:1.5px solid var(--purple);border-radius:5px;padding:5px 12px;font-size:11.5px;font-weight:700;text-align:center;margin-bottom:2px">1. LayerNorm</div>
+        <div style="font-size:12px;color:var(--navy)">⬇</div>
+        <div style="background:var(--light-purple);border:1.5px solid var(--purple);border-radius:5px;padding:5px 12px;font-size:11.5px;font-weight:700;text-align:center;margin-bottom:2px">2. Self-Attention</div>
+        <div style="font-size:12px;color:var(--navy)">⬇</div>
+        <div style="background:#ffe0ee;border:1.5px solid #cc3366;border-radius:5px;padding:5px 12px;font-size:11.5px;font-weight:700;text-align:center;margin-bottom:2px">3. Add &amp; Residual</div>
+        <div style="font-size:12px;color:var(--navy)">⬇</div>
+        <div style="background:var(--light-purple);border:1.5px solid var(--purple);border-radius:5px;padding:5px 12px;font-size:11.5px;font-weight:700;text-align:center;margin-bottom:2px">4. LayerNorm</div>
+        <div style="font-size:12px;color:var(--navy)">⬇</div>
+        <div style="background:var(--light-green);border:1.5px solid var(--green);border-radius:5px;padding:5px 12px;font-size:11.5px;font-weight:700;text-align:center;margin-bottom:2px">5. Feed Forward Network</div>
+        <div style="font-size:12px;color:var(--navy)">⬇</div>
+        <div style="background:#ffe0ee;border:1.5px solid #cc3366;border-radius:5px;padding:5px 12px;font-size:11.5px;font-weight:700;text-align:center;margin-bottom:2px">6. Add &amp; Residual</div>
+        <div style="font-size:12px;color:var(--navy)">⬇</div>
+        <div style="background:var(--light-green);border:1.5px solid var(--green);border-radius:5px;padding:5px 12px;font-size:11.5px;font-weight:700;text-align:center">Output</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. POSITIONAL EMBEDDING: ROPE -->
+  <div class="card col2">
+    <div class="ch">12. Positional Embedding: RoPE (Rotary)</div>
+    <div class="cb">
+      <ul class="ck mb4">
+        <li>Adds position information via rotation in query and key space.</li>
+        <li>Preserves relative positions.</li>
+        <li>Enables extrapolation to longer sequences.</li>
+        <li>Common in modern LLMs.</li>
+      </ul>
+      <div style="background:var(--light-blue2);border:1.5px solid var(--blue);border-radius:5px;padding:8px;font-size:11.5px;font-family:monospace;text-align:center">
+        R(θ) = [ cos θ &nbsp; -sin θ ]<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ sin θ &nbsp;&nbsp; cos θ ]<br><br>
+        Q' = R(θ)Q, &nbsp; K' = R(θ)K
+      </div>
+    </div>
+  </div>
+
+  <!-- 13. OTHER ARCHITECTURE EXPERIMENTS -->
+  <div class="card col2">
+    <div class="ch">13. Other Architecture Experiments</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="dot">Many variants exist beyond the original Transformer.</li>
+        <li class="dot">Examples: Reformer, Performer, Linformer, RETRO, Hyena, etc.</li>
+        <li class="dot">Explore different ways to scale attention, reduce cost, and improve efficiency.</li>
+        <li class="dot">Research is ongoing and evolving quickly.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 14. TRANSFORMERS BEYOND LLMs -->
+  <div class="card col2">
+    <div class="ch">14. Transformers Beyond LLMs</div>
+    <div class="cb">
+      <ul class="ck">
+        <li>Vision Transformers (ViT) for images.</li>
+        <li>Audio Transformers for speech.</li>
+        <li>Time-series forecasting.</li>
+        <li>Code models and multimodal models.</li>
+        <li>Transformers are a general-purpose architecture across domains.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 15. SURVEY & CONTINUOUS RESEARCH -->
+  <div class="card col2">
+    <div class="ch green">15. Survey &amp; Continuous Research</div>
+    <div class="cb">
+      <div class="small mb4">A survey of transformers highlights active research directions:</div>
+      <ul class="ck">
+        <li class="dot">Better attention mechanisms</li>
+        <li class="dot">Efficiency and scalability</li>
+        <li class="dot">Long-context handling</li>
+        <li class="dot">New architectures</li>
+      </ul>
+      <div class="tip mt4">The field is rapidly advancing. 🚀</div>
+    </div>
+  </div>
+
+</div><!-- /row6 -->
+
+<!-- KEY TAKEAWAYS FOOTER -->
+<div class="card">
+  <div class="ch orange">🔑 Key Takeaways</div>
+  <div class="cb">
+    <div class="three">
+      <ul class="ck">
+        <li>Transformers use self-attention to understand context.</li>
+        <li>Attention scores relevance, then combines information.</li>
+        <li>Efficient tricks (caching, MQA/GQA, FlashAttention) make generation fast.</li>
+      </ul>
+      <ul class="ck">
+        <li>Positional encoding (e.g., RoPE) adds order information.</li>
+        <li>Many improvements and variants continue to push the limits.</li>
+      </ul>
+      <ul class="ck">
+        <li>Transformers power not just LLMs, but many AI applications.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="quote-box">
+  "Attention is all you need." <span>— The Transformer paper</span>
+</div>
+
+</div>
+</body>
+</html>

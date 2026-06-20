@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 9: Multimodal Large Language Models</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Source+Code+Pro:wght@400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a2744;--navy2:#1e3060;--orange:#e8a020;--orange2:#f5b830;--blue:#2255cc;--blue2:#3366dd;--lb:#dce8ff;--lb2:#eaf0ff;--yellow:#fff3b0;--y2:#fffae0;--green:#2a7a3b;--lg:#e8f5eb;--red:#cc2222;--lr:#fdecea;--gray:#f4f6fb;--border:#b8c8e8;--text:#1a2030;--cbg:#1e2a40;--ct:#e8f0ff;--gold:#c8960c;--purple:#6633aa;--lp:#f0e8ff;--teal:#0d7070}
+body{font-family:'Nunito',sans-serif;background:#e8ecf8;color:var(--text);font-size:13px;line-height:1.5}
+.hdr{background:var(--navy);color:white;text-align:center;padding:14px 20px 10px;border-bottom:4px solid var(--orange)}
+.hdr-in{display:flex;align-items:center;justify-content:center;gap:12px}
+.hdr h1{font-size:20px;font-weight:900;line-height:1.1}
+.hdr h1 span{color:var(--orange)}
+.hdr p{font-size:11px;color:#c8d4f0;max-width:1000px;margin:3px auto 0}
+.pg{max-width:1440px;margin:0 auto;padding:7px 7px 18px;display:flex;flex-direction:column;gap:7px}
+.row{display:flex;gap:7px}
+.row>*{flex:1;min-width:0}
+.c2{flex:2}.c3{flex:3}.c15{flex:1.5}
+.card{background:white;border:1.5px solid var(--border);border-radius:7px;overflow:hidden}
+.ch{background:var(--navy);color:white;font-size:11px;font-weight:800;padding:4px 8px;text-transform:uppercase;letter-spacing:.3px}
+.ch.or{background:var(--orange);color:var(--navy)}
+.ch.gr{background:var(--green)}
+.ch.rd{background:var(--red)}
+.ch.bl{background:var(--blue2)}
+.ch.pu{background:var(--purple)}
+.ch.tl{background:var(--teal)}
+.cb{padding:8px}
+ul.ck{list-style:none}
+ul.ck li{display:flex;gap:5px;align-items:flex-start;margin-bottom:3px;font-size:11.5px}
+ul.ck li::before{content:"✅";font-size:10px;margin-top:1px;flex-shrink:0}
+ul.ck li.x::before{content:"❌"}
+ul.ck li.d::before{content:"•";font-size:13px;color:var(--navy);margin-top:0}
+ul.ck li.st::before{content:"⭐"}
+ul.ck li.ar::before{content:"➡️";font-size:9px;margin-top:2px}
+ul.ck li.wa::before{content:"⚠️"}
+.flow{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin:4px 0}
+.fn{background:var(--lb);border:1.5px solid var(--blue);border-radius:4px;padding:3px 7px;font-size:11px;font-weight:700;text-align:center}
+.fn.dk{background:var(--navy);color:white;border-color:var(--navy)}
+.fn.gn{background:var(--lg);border-color:var(--green)}
+.fn.or{background:#fff0d0;border-color:var(--orange)}
+.fn.pu{background:var(--lp);border-color:var(--purple)}
+.fn.rd{background:var(--lr);border-color:var(--red)}
+.fa{font-size:13px;color:#555;font-weight:900}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:var(--navy);color:white;padding:3px 6px;text-align:left;font-weight:700;font-size:10.5px}
+td{padding:3px 6px;border-bottom:1px solid #dde4f0;vertical-align:top;font-size:11px}
+tr:nth-child(even) td{background:var(--gray)}
+pre{background:var(--cbg);color:var(--ct);font-family:'Source Code Pro',monospace;font-size:10px;padding:7px 9px;border-radius:4px;overflow-x:auto;line-height:1.5;margin:3px 0;white-space:pre}
+.kw{color:#79b8ff}.str{color:#9ecbff}.cm{color:#6a8099;font-style:italic}.nm{color:#f8c555}
+.tip{background:var(--y2);border:1.5px solid var(--gold);border-radius:4px;padding:5px 7px;font-size:11px;margin-top:4px}
+.tip strong{color:var(--navy)}
+.tkw{background:var(--yellow);border:2px solid var(--gold);border-radius:5px;padding:7px;margin-top:5px;font-size:11.5px}
+.tkwt{font-weight:800;color:var(--navy);margin-bottom:2px}
+.b{font-weight:800}.sm{font-size:11px}.ti{font-size:10.5px}
+.mt3{margin-top:3px}.mt5{margin-top:5px}.mt7{margin-top:7px}
+.mb3{margin-bottom:3px}.mb5{margin-bottom:5px}
+.ct{text-align:center}
+.nv{color:var(--navy)}.gt{color:var(--green)}.rt{color:var(--red)}.ot{color:var(--orange)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.four{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.ib{border:1.5px solid var(--border);border-radius:5px;overflow:hidden;margin-top:4px}
+.ibh{background:var(--navy2);color:white;font-size:10.5px;font-weight:700;padding:3px 7px}
+.ibh.or{background:var(--orange);color:var(--navy)}
+.ibh.bl{background:var(--blue2)}
+.ibh.gn{background:var(--green)}
+.ibh.pu{background:var(--purple)}
+.ibh.rd{background:var(--red)}
+.ibb{padding:6px;font-size:11px}
+.chat-u{background:var(--navy);color:white;border-radius:4px;padding:4px 7px;margin-bottom:3px;font-size:10.5px}
+.chat-a{background:var(--lg);border:1px solid var(--green);border-radius:4px;padding:4px 7px;font-size:10.5px}
+.power-stack{background:var(--navy);border-radius:6px;padding:10px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:5px}
+.ps-item{background:var(--lb2);border:2px solid var(--blue);border-radius:5px;padding:6px 10px;font-size:11.5px;font-weight:800;color:var(--navy);text-align:center;min-width:90px}
+.ps-plus{color:var(--orange2);font-size:20px;font-weight:900}
+.ps-eq{color:var(--orange2);font-size:20px;font-weight:900}
+.ps-result{background:var(--orange);border-color:var(--gold);color:var(--navy);font-size:12px}
+.bb{background:var(--navy);color:white;padding:8px 14px;border-radius:5px;font-size:12px;text-align:center;margin-top:5px}
+.bb strong{color:var(--orange2)}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-in">
+    <div style="font-size:42px">🤖</div>
+    <div>
+      <h1>CHAPTER 9: <span>MULTIMODAL LARGE LANGUAGE MODELS</span></h1>
+      <p>Enable LLMs to understand and reason across text, images, audio, video, and more — unlocking new capabilities and more powerful real-world applications.</p>
+    </div>
+    <div style="font-size:38px">🧠</div>
+  </div>
+</div>
+
+<div class="pg">
+
+<!-- ROW 1 -->
+<div class="row">
+  <!-- 1. WHAT YOU'LL LEARN -->
+  <div class="card">
+    <div class="ch">1. What You'll Learn</div>
+    <div class="cb">
+      <ul class="ck">
+        <li>What multimodal LLMs are and why they matter</li>
+        <li>Vision Transformers (ViT) — turning images into embeddings</li>
+        <li>Multimodal embeddings with CLIP</li>
+        <li>Making LLMs multimodal (BLIP-2 &amp; others)</li>
+        <li>Multimodal prompting and chat</li>
+        <li>Applications: captioning, VQA, retrieval, more</li>
+        <li>Best practices &amp; limitations</li>
+      </ul>
+      <div class="tkw">
+        <div class="tkwt">⭐ Key Takeaway</div>
+        Multimodal models combine multiple modalities to reason about the world more like humans.
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. MULTIMODAL MODELS: AN OVERVIEW -->
+  <div class="card c2">
+    <div class="ch">2. Multimodal Models: An Overview</div>
+    <div class="cb">
+      <div class="sm mb3">Models that can take one or more modalities as input and/or generate in one or more modalities.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+        <div style="text-align:center;font-size:11px;border:1.5px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--gray)"><div style="font-size:20px">📝</div>Text</div>
+        <div style="text-align:center;font-size:11px;border:1.5px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--gray)"><div style="font-size:20px">🖼️</div>Image</div>
+        <div style="text-align:center;font-size:11px;border:1.5px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--gray)"><div style="font-size:20px">🔊</div>Audio</div>
+        <div style="text-align:center;font-size:11px;border:1.5px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--gray)"><div style="font-size:20px">🎥</div>Video</div>
+        <div style="text-align:center;font-size:11px;border:1.5px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--gray)"><div style="font-size:20px">📡</div>Sensors</div>
+      </div>
+      <div class="flow mb4">
+        <div class="fn dk" style="font-size:10px">Input<br>(Any Modality)</div><div class="fa">→</div>
+        <div class="fn pu" style="font-size:10px">Model</div><div class="fa">→</div>
+        <div class="fn gn" style="font-size:10px">Output<br>(Any Modality)</div>
+      </div>
+      <table>
+        <thead><tr><th>Input Capability</th><th>Output Capability</th></tr></thead>
+        <tbody>
+          <tr><td>Text Only</td><td>Text Only (Traditional LLMs)</td></tr>
+          <tr><td>Text + Image</td><td>Text (Most Common Today)</td></tr>
+          <tr><td>Text, Image, Audio</td><td>Text, Audio (Emerging)</td></tr>
+          <tr><td>Text, Image, Video…</td><td>Text, Image… (Future)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 3. FROM TEXT TRANSFORMER TO VISION TRANSFORMER (VIT) -->
+  <div class="card c2">
+    <div class="ch">3. From Text Transformer to Vision Transformer (ViT)</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3 nv">Text Transformer (e.g., BERT)</div>
+          <div class="flow" style="flex-direction:column;align-items:flex-start;gap:2px">
+            <div class="fn dk" style="font-size:10px;width:100%">Text</div>
+            <div class="fa">⬇</div>
+            <div class="fn" style="font-size:10px;width:100%">Tokenizer (split into tokens)<br>T₁ T₂ T₃ … Tₙ</div>
+            <div class="fa">⬇</div>
+            <div class="fn pu" style="font-size:10px;width:100%">Embedding</div>
+            <div class="fa">⬇</div>
+            <div class="fn" style="font-size:10px;width:100%">Transformer (Encoder)</div>
+            <div class="fa">⬇</div>
+            <div class="fn gn" style="font-size:10px;width:100%">Representation</div>
+            <div class="fa">⬇</div>
+            <div class="fn or" style="font-size:10px;width:100%">Tasks (Classification, Search, etc.)</div>
+          </div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">Vision Transformer (ViT)</div>
+          <div class="flow" style="flex-direction:column;align-items:flex-start;gap:2px">
+            <div style="background:var(--orange);color:var(--navy);border:1.5px solid var(--gold);border-radius:4px;padding:3px 7px;font-size:10px;font-weight:700;width:100%">Image</div>
+            <div class="fa">⬇</div>
+            <div class="fn or" style="font-size:10px;width:100%">Image Patching (split into patches)</div>
+            <div class="fa">⬇</div>
+            <div class="fn" style="font-size:10px;width:100%">Linear Projection (to patch embeddings)</div>
+            <div class="fa">⬇</div>
+            <div class="fn" style="font-size:10px;width:100%">Transformer (Encoder)</div>
+            <div class="fa">⬇</div>
+            <div class="fn gn" style="font-size:10px;width:100%">Representation</div>
+            <div class="fa">⬇</div>
+            <div class="fn or" style="font-size:10px;width:100%">Tasks (Classification, Search, etc.)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. THE POWER OF MULTIMODAL EMBEDDINGS -->
+  <div class="card">
+    <div class="ch">4. The Power of Multimodal Embeddings</div>
+    <div class="cb">
+      <div class="sm mb3">Embed text &amp; images in the same vector space so they can be compared!</div>
+      <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:7px;font-size:11px;text-align:center;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span>🔵 Text Embeddings</span>
+          <span>🟠 Image Embeddings</span>
+        </div>
+        <div style="font-size:20px;margin:5px 0">↔ Similarity ↔</div>
+      </div>
+      <ul class="ck">
+        <li>Similar meaning → close in vector space</li>
+        <li>Enables cross-modal search &amp; reasoning!</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 2: VIT IN DETAIL -->
+<div class="row">
+  <!-- 5. VISION TRANSFORMER (VIT) IN DETAIL -->
+  <div class="card c3">
+    <div class="ch">5. Vision Transformer (ViT) in Detail</div>
+    <div class="cb">
+      <div class="four">
+        <div>
+          <div class="b sm mb3 nv">5.1 Patchification</div>
+          <div class="sm mb3">Split image into fixed-size patches (e.g., 16×16 pixels)</div>
+          <div style="background:var(--gray);border:1.5px solid var(--border);border-radius:4px;padding:5px;font-size:10.5px">
+            Patch 1 → E₁<br>Patch 2 → E₂<br>…<br>Patch N → Eₙ
+          </div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">5.2 Linear Projection</div>
+          <div class="sm">Flatten each patch and project to an embedding vector</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:10.5px;margin-top:5px">
+            E₁ = Linear(Patch₁)<br>
+            E₂ = Linear(Patch₂)<br>…
+          </div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">5.3 Add Position Embedding</div>
+          <div class="sm">Add positional info so model knows patch order/position</div>
+          <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:4px;padding:5px;font-size:10.5px;margin-top:5px">
+            Pos ⊕ E₁<br>Pos ⊕ E₂<br>…<br>Pos ⊕ Eₙ
+          </div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">5.4 Transformer Encoder</div>
+          <div class="sm">Process like text tokens!</div>
+          <div class="flow mt3" style="flex-direction:column;align-items:flex-start">
+            <div class="fn pu" style="font-size:10px;width:100%">Transformer Encoder</div>
+            <div class="fa">⬇</div>
+            <div class="fn gn" style="font-size:10px;width:100%">Output Representations</div>
+          </div>
+        </div>
+      </div>
+      <div class="tip mt3">ViT treats image patches like words/tokens — same Transformer magic!</div>
+    </div>
+  </div>
+
+  <!-- 6. CLIP: CONNECTING TEXT & IMAGES -->
+  <div class="card c2">
+    <div class="ch">6. CLIP: Connecting Text &amp; Images</div>
+    <div class="cb">
+      <div class="sm mb3">CLIP learns a joint embedding space for text and images.</div>
+      <div class="flow mb4">
+        <div style="text-align:center;flex:1">
+          <div class="fn pu" style="font-size:10px;margin-bottom:3px">Image Encoder (ViT)</div>
+          <div style="font-size:9px;color:#555">Image → Image Embedding</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:18px;color:var(--navy)">⟵</div>
+          <div class="fn" style="font-size:10px;padding:4px;margin:3px 0">Contrastive<br>Learning</div>
+          <div style="font-size:18px;color:var(--navy)">⟶</div>
+        </div>
+        <div style="text-align:center;flex:1">
+          <div class="fn" style="font-size:10px;margin-bottom:3px">Text Encoder (Transformer)</div>
+          <div style="font-size:9px;color:#555">Text → Text Embedding</div>
+        </div>
+      </div>
+      <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:11px;text-align:center;margin-bottom:5px">
+        "A puppy playing in the snow."
+      </div>
+      <ul class="ck">
+        <li>Maximize similarity for matching text-image pairs</li>
+        <li>Minimize similarity for non-matching pairs</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 7. CLIP EXAMPLE: SIMILARITY MATRIX -->
+  <div class="card c2">
+    <div class="ch">7. CLIP Example: Similarity Matrix</div>
+    <div class="cb">
+      <div class="sm mb3">Compare 3 images vs 3 captions.</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Images →</th>
+            <th>C1<br>("Puppy in snow")</th>
+            <th>C2<br>("Sunset at beach")</th>
+            <th>C3<br>("Sports car")</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>I1 (Puppy)</b></td>
+            <td style="background:#e8f5eb;font-weight:800;color:var(--green)">0.93</td>
+            <td style="background:var(--lr);color:var(--red)">-0.21</td>
+            <td>0.05</td>
+          </tr>
+          <tr>
+            <td><b>I2 (Sunset)</b></td>
+            <td>0.02</td>
+            <td style="background:#e8f5eb;font-weight:800;color:var(--green)">0.91</td>
+            <td style="background:var(--lr);color:var(--red)">-0.10</td>
+          </tr>
+          <tr>
+            <td><b>I3 (Car)</b></td>
+            <td>0.01</td>
+            <td style="background:var(--lr);color:var(--red)">-0.12</td>
+            <td style="background:#e8f5eb;font-weight:800;color:var(--green)">0.92</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="sm mt3"><span class="gt">High = similar meaning</span> &nbsp;|&nbsp; <span class="rt">Low/Negative = dissimilar</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 3 -->
+<div class="row">
+  <!-- 8. BLIP-2: BRIDGING VISION AND LANGUAGE -->
+  <div class="card c2">
+    <div class="ch">8. BLIP-2: Bridging Vision and Language</div>
+    <div class="cb">
+      <div class="sm mb3">BLIP-2 connects a frozen image encoder and a frozen LLM with a trainable Q-Former.</div>
+      <div class="flow mb4">
+        <div class="fn or" style="font-size:10px">Image</div><div class="fa">→</div>
+        <div style="text-align:center;font-size:11px">
+          <div style="background:var(--gray);border:1.5px solid var(--border);border-radius:4px;padding:3px 7px;font-size:10px;font-weight:700;margin-bottom:2px">Frozen ViT<br>(Image Encoder)</div>
+          <div style="font-size:9px">Image Embeddings</div>
+        </div>
+        <div class="fa">→</div>
+        <div style="text-align:center;font-size:11px">
+          <div style="background:var(--orange);color:var(--navy);border:1.5px solid var(--gold);border-radius:4px;padding:3px 7px;font-size:10px;font-weight:700;margin-bottom:2px">Q-Former<br>(Trainable) 🔥</div>
+          <div style="font-size:9px">Query Embeddings<br>(Soft Tokens)</div>
+        </div>
+        <div class="fa">→</div>
+        <div style="text-align:center;font-size:11px">
+          <div style="background:var(--gray);border:1.5px solid var(--border);border-radius:4px;padding:3px 7px;font-size:10px;font-weight:700;margin-bottom:2px">Frozen LLM<br>(Language Model)</div>
+        </div>
+        <div class="fa">→</div>
+        <div class="fn gn" style="font-size:10px">Text (Output)</div>
+      </div>
+      <div class="two">
+        <div>
+          <div class="b sm mb3">Stage 1: Representation Learning (Pre-train Q-Former)</div>
+          <ul class="ck">
+            <li class="d">Image-Text Contrastive Learning</li>
+            <li class="d">Image-Text Matching</li>
+            <li class="d">Image-Grounded Text Generation</li>
+          </ul>
+        </div>
+        <div>
+          <div class="b sm mb3">Stage 2: Vision-to-Language Generation</div>
+          <ul class="ck">
+            <li class="d">Q-Former outputs act as soft prompts for the LLM</li>
+            <li class="d">LLM generates answers / captions</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. MULTIMODAL PROMPTING (VQA) -->
+  <div class="card">
+    <div class="ch">9. Multimodal Prompting (Visual Question Answering)</div>
+    <div class="cb">
+      <div class="sm mb3">Ask questions about images!</div>
+      <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:7px;font-size:11px;margin-bottom:5px">
+        <div style="font-size:24px;text-align:center;margin-bottom:4px">🍕</div>
+        <div class="chat-u">User: What is this?</div>
+        <div class="chat-a">BLIP-2: A pizza with cheese and tomato sauce.</div>
+        <div class="chat-u" style="margin-top:3px">User: What toppings can you see?</div>
+        <div class="chat-a">BLIP-2: Tomato, basil, mozzarella cheese.</div>
+        <div class="chat-u" style="margin-top:3px">User: Is it vegetarian?</div>
+        <div class="chat-a">BLIP-2: Yes, it appears vegetarian.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. IMAGE CAPTIONING EXAMPLE -->
+  <div class="card">
+    <div class="ch">10. Image Captioning Example (Interactive Conversation)</div>
+    <div class="cb">
+      <div class="sm mb3">Input Image: 🐕 (puppy)</div>
+      <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:7px;font-size:11px">
+        <div class="chat-u">User: What is in this image?</div>
+        <div class="chat-a">BLIP-2: A sports car driving on a road at sunset.</div>
+        <div class="chat-u" style="margin-top:3px">User: What color is the car?</div>
+        <div class="chat-a">BLIP-2: The car is orange.</div>
+        <div class="chat-u" style="margin-top:3px">User: How much would it cost to buy this car?</div>
+        <div class="chat-a">BLIP-2: It could cost around $200,000 or more.</div>
+      </div>
+      <div class="tip mt3">
+        <b>BLIP-2 Caption:</b> "A puppy playing in the snow."
+      </div>
+    </div>
+  </div>
+
+  <!-- 8.5 CROSS-ENCODER vs BI-ENCODER -->
+  <div class="card c15">
+    <div class="ch">Cross-Encoder (BERT) vs Bi-Encoder (SBERT)</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3 rt">Cross-Encoder / BERT</div>
+          <div class="sm mb3">Slow but accurate</div>
+          <div style="background:var(--lr);border:1.5px solid var(--red);border-radius:4px;padding:5px;font-size:10.5px">
+            Sentence A + Sentence B → BERT + Classifier Head → Score
+          </div>
+        </div>
+        <div>
+          <div class="b sm mb3 gt">Bi-Encoder / SBERT (Siamese)</div>
+          <div class="sm mb3">Fast &amp; scalable</div>
+          <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:4px;padding:5px;font-size:10.5px">
+            Sentence A → BERT (shared weights) → Pooling (mean / [CLS])<br>
+            Sentence B → BERT (shared weights) → Pooling (mean / [CLS])<br>
+            → Cosine Similarity
+          </div>
+        </div>
+      </div>
+      <div class="tip mt3">Bi-encoders scale to millions of comparisons!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 4: DENSE RETRIEVAL + RAG RECAP -->
+<div class="row">
+  <!-- 12. DENSE RETRIEVAL -->
+  <div class="card">
+    <div class="ch">12. Dense Retrieval (Semantic Search)</div>
+    <div class="cb">
+      <ol style="list-style:none;padding:0">
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">1</span>Embed</li>
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">2</span>Index → Vector Index</li>
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">3</span>Search (Nearest Neighbours)</li>
+        <li style="display:flex;gap:5px;margin-bottom:3px;font-size:11.5px"><span style="background:var(--navy);color:white;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">4</span>Retrieve</li>
+      </ol>
+      <div class="b sm mt5 mb3">Pros</div>
+      <ul class="ck">
+        <li>Find similar by meaning (not just keywords)</li>
+        <li>Works across languages &amp; domains</li>
+        <li>Scalable with ANN &amp; vector DBs</li>
+      </ul>
+      <div class="b sm mt3 mb3">Cons</div>
+      <ul class="ck">
+        <li class="x">May miss exact keyword matches</li>
+        <li class="x">Needs good embeddings</li>
+        <li class="x">Chunking strategy is crucial</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 13. RERANKING -->
+  <div class="card c15">
+    <div class="ch">13. Reranking (Re-Ordering Results)</div>
+    <div class="cb">
+      <div class="sm mb3">Pipeline: First Retrieve → Then Rerank</div>
+      <div class="flow mb4">
+        <div class="fn dk" style="font-size:10px">Query</div><div class="fa">→</div>
+        <div class="fn" style="font-size:10px">Retriever<br>(Dense / BM25 / Hybrid)</div><div class="fa">→</div>
+        <div class="fn or" style="font-size:10px">Top-N Candidates</div><div class="fa">→</div>
+        <div class="fn pu" style="font-size:10px">Reranker<br>(LLM Cross-Encoder)</div><div class="fa">→</div>
+        <div class="fn gn" style="font-size:10px">Re-ranked<br>Top-K</div>
+      </div>
+      <div class="two">
+        <div>
+          <div class="b sm mb3">Benefits</div>
+          <ul class="ck">
+            <li>Improves precision of top results</li>
+            <li>Captures deeper semantics</li>
+            <li>Huge gains in nDCG / MAP</li>
+          </ul>
+        </div>
+        <div>
+          <div class="b sm mb3">Trade-offs</div>
+          <ul class="ck">
+            <li class="wa">More compute (costly)</li>
+            <li class="wa">Latency increase</li>
+            <li class="wa">Needs shortlist floor</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14. RETRIEVAL-AUGMENTED GENERATION (RAG) -->
+  <div class="card c15">
+    <div class="ch">14. Retrieval-Augmented Generation (RAG)</div>
+    <div class="cb">
+      <div class="sm mb3">Retrieve relevant info → Use it to generate grounded answer.</div>
+      <div class="flow mb4">
+        <div class="fn dk" style="font-size:10px">Question</div><div class="fa">→</div>
+        <div class="fn" style="font-size:10px">Retriever (Search)</div><div class="fa">→</div>
+        <div class="fn gn" style="font-size:10px">Relevant Documents</div><div class="fa">→</div>
+        <div class="fn pu" style="font-size:10px">LLM (+ Citations)</div>
+      </div>
+      <div class="two">
+        <div>
+          <div class="b sm mb3">Benefits</div>
+          <ul class="ck">
+            <li>Reduces hallucinations</li>
+            <li>More factual &amp; up-to-date</li>
+            <li>Explainable answers</li>
+          </ul>
+        </div>
+        <div>
+          <div class="b sm mb3">Challenges</div>
+          <ul class="ck">
+            <li class="x">Retriever quality matters</li>
+            <li class="x">Chunking &amp; routing complexity</li>
+            <li class="x">Evaluation is harder</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 15. RAG ADVANCED TECHNIQUES -->
+  <div class="card">
+    <div class="ch">15. RAG Advanced Techniques</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="ar"><b>Query Rewriting</b><br>Rewrite user question for better retrieval</li>
+        <li class="ar"><b>Multi-Query RAG</b><br>Break into multiple sub-queries</li>
+        <li class="ar"><b>Multi-Hop RAG</b><br>Sequential searches for complex Qs</li>
+        <li class="ar"><b>Query Routing</b><br>Route to best data source / tool</li>
+        <li class="ar"><b>Agentic RAG</b><br>Use agents to decide actions/tools</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 5 -->
+<div class="row">
+  <!-- 16. CHUNKING STRATEGIES -->
+  <div class="card">
+    <div class="ch">16. Chunking Strategies</div>
+    <div class="cb">
+      <div class="sm mb3">How to split long documents before embedding.</div>
+      <ul class="ck">
+        <li class="d"><b>By Sentence</b><br>Fine-grained; may lose context</li>
+        <li class="d"><b>By Paragraph</b><br>Good balance for many docs</li>
+        <li class="d"><b>Fixed-size (N tokens)</b><br>Simple; may cut meaning</li>
+        <li class="d"><b>Overlapping Chunks</b><br>Retain context across boundaries</li>
+        <li class="d"><b>Semantic Chunking (LLM)</b><br>Split by meaning/structure</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 17. RETRIEVAL EVALUATION METRICS -->
+  <div class="card c2">
+    <div class="ch">17. Retrieval Evaluation Metrics</div>
+    <div class="cb">
+      <div class="sm mb3">Key IR metrics to evaluate search quality.</div>
+      <div class="two">
+        <div>
+          <div class="b sm mb3 nv">MAP (Mean Average Precision)</div>
+          <div class="sm mb3">Considers both relevance and rank position.</div>
+          <table>
+            <thead><tr><th>Rank</th><th>Relevant?</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td style="color:var(--red)">❌</td></tr>
+              <tr><td>2</td><td style="color:var(--green)">✅</td></tr>
+              <tr><td>3</td><td style="color:var(--red)">❌</td></tr>
+              <tr><td>4</td><td style="color:var(--green)">✅</td></tr>
+            </tbody>
+          </table>
+          <div style="font-family:monospace;font-size:10.5px;background:var(--lb2);border:1px solid var(--blue);border-radius:3px;padding:4px;margin-top:4px">
+            AP = (1/|rel|) × Σ Precision@k<br>
+            MAP = average(AP for all queries)
+          </div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">nDCG (Normalized Discounted CG)</div>
+          <div class="sm mb3">Considers graded relevance.</div>
+          <table>
+            <thead><tr><th>Rank</th><th>Rel. Grade</th><th>Gain</th><th>DCG</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td style="color:var(--red)">3</td><td>3.00</td><td>3.00</td></tr>
+              <tr><td>2</td><td style="color:var(--red)">1</td><td>1.00</td><td>1.26</td></tr>
+              <tr><td>3</td><td style="color:var(--green)">0</td><td>0.00</td><td>4.26</td></tr>
+              <tr><td>4</td><td style="color:var(--green)">0</td><td>0.31</td><td>4.57</td></tr>
+            </tbody>
+          </table>
+          <div style="font-family:monospace;font-size:10.5px;background:var(--lb2);border:1px solid var(--blue);border-radius:3px;padding:4px;margin-top:4px">nDCG = DCG / IDCG</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 18. HANDS-ON CODE SNAPSHOT -->
+  <div class="card c2">
+    <div class="ch">18. Hands-On Code Snapshot</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3">Dense Retrieval (with FAISS)</div>
+<pre>embeddings = embed(texts)
+index = faiss.IndexFlatL2(dim)
+index.add(embeddings)
+D, I = index.search(query_emb, k))
+results = [texts[i] <span class="kw">for</span> i <span class="kw">in</span> I[<span class="nm">0</span>]]</pre>
+        </div>
+        <div>
+          <div class="b sm mb3">RAG Pipeline (LangChain)</div>
+<pre>retriever = db.as_retriever()
+rag = RetrievalQA.from_chain_type(
+    llm=llm, retriever=retriever)
+answer = rag.invoke({<span class="str">"query"</span>: query})</pre>
+        </div>
+      </div>
+      <div class="tip mt3">⭐ <b>Great RAG = Great Retrieval + Great Generation + Great Evaluation!</b></div>
+    </div>
+  </div>
+
+  <!-- 19. BEST PRACTICES & TIPS -->
+  <div class="card">
+    <div class="ch or">19. Best Practices &amp; Tips</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="st">Choose strong embedding models</li>
+        <li class="st">Use hybrid search when possible</li>
+        <li class="st">Rerank shortlists (not full corpus)</li>
+        <li class="st">Craft good prompts for RAG</li>
+        <li class="st">Cite sources for transparency</li>
+        <li class="st">Evaluate with multiple metrics</li>
+        <li class="st">Monitor &amp; iterate continuously</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 6: POWER STACK + NEXT -->
+<div class="row">
+  <div class="card c3">
+    <div class="ch or">At a Glance: The Power Stack</div>
+    <div class="cb">
+      <div class="power-stack">
+        <div class="ps-item">📊<br>Data<br><span style="font-size:10px;font-weight:400">(Multimodal)</span></div>
+        <div class="ps-plus">+</div>
+        <div class="ps-item">🔢<br>Embeddings<br><span style="font-size:10px;font-weight:400">(Represent Meaning)</span></div>
+        <div class="ps-plus">+</div>
+        <div class="ps-item">🔍<br>Retrieval<br><span style="font-size:10px;font-weight:400">(Find Relevant Info)</span></div>
+        <div class="ps-plus">+</div>
+        <div class="ps-item">✍️<br>Generation<br><span style="font-size:10px;font-weight:400">(Answer Clearly)</span></div>
+        <div class="ps-eq">=</div>
+        <div class="ps-item ps-result">🚀<br>Reliable AI</div>
+      </div>
+    </div>
+  </div>
+  <div class="card c2">
+    <div class="ch or">20. Where We're Headed</div>
+    <div class="cb">
+      <div class="sm mb3">Multimodal models are evolving fast! Expect better reasoning, more modalities (video, 3D, sensors), and deeper real-world impact across every industry.</div>
+      <ul class="ck">
+        <li class="st">Video, 3D, sensors integration</li>
+        <li class="st">Deeper real-world impact across industries</li>
+      </ul>
+      <div style="text-align:center;font-size:32px;margin-top:6px">🚀</div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

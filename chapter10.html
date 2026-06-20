@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 10: Creating Text Embedding Models</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Source+Code+Pro:wght@400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a2744;--navy2:#1e3060;--orange:#e8a020;--orange2:#f5b830;--blue:#2255cc;--blue2:#3366dd;--lb:#dce8ff;--lb2:#eaf0ff;--yellow:#fff3b0;--y2:#fffae0;--green:#2a7a3b;--lg:#e8f5eb;--red:#cc2222;--lr:#fdecea;--gray:#f4f6fb;--border:#b8c8e8;--text:#1a2030;--cbg:#1e2a40;--ct:#e8f0ff;--gold:#c8960c;--purple:#6633aa;--lp:#f0e8ff;--teal:#0d7070}
+body{font-family:'Nunito',sans-serif;background:#e8ecf8;color:var(--text);font-size:13px;line-height:1.5}
+.hdr{background:var(--navy);color:white;text-align:center;padding:14px 20px 10px;border-bottom:4px solid var(--orange)}
+.hdr-in{display:flex;align-items:center;justify-content:center;gap:12px}
+.hdr h1{font-size:20px;font-weight:900;line-height:1.1}
+.hdr h1 span{color:var(--orange)}
+.hdr p{font-size:11px;color:#c8d4f0;max-width:1100px;margin:3px auto 0}
+.pg{max-width:1440px;margin:0 auto;padding:7px 7px 18px;display:flex;flex-direction:column;gap:7px}
+.row{display:flex;gap:7px}
+.row>*{flex:1;min-width:0}
+.c2{flex:2}.c3{flex:3}.c15{flex:1.5}
+.card{background:white;border:1.5px solid var(--border);border-radius:7px;overflow:hidden}
+.ch{background:var(--navy);color:white;font-size:11px;font-weight:800;padding:4px 8px;text-transform:uppercase;letter-spacing:.3px}
+.ch.or{background:var(--orange);color:var(--navy)}
+.ch.gr{background:var(--green)}
+.ch.rd{background:var(--red)}
+.ch.bl{background:var(--blue2)}
+.ch.pu{background:var(--purple)}
+.ch.tl{background:var(--teal)}
+.cb{padding:8px}
+ul.ck{list-style:none}
+ul.ck li{display:flex;gap:5px;align-items:flex-start;margin-bottom:3px;font-size:11.5px}
+ul.ck li::before{content:"✅";font-size:10px;margin-top:1px;flex-shrink:0}
+ul.ck li.x::before{content:"❌"}
+ul.ck li.d::before{content:"•";font-size:13px;color:var(--navy);margin-top:0}
+ul.ck li.st::before{content:"⭐"}
+ul.ck li.ar::before{content:"➡️";font-size:9px;margin-top:2px}
+.flow{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin:4px 0}
+.fn{background:var(--lb);border:1.5px solid var(--blue);border-radius:4px;padding:3px 7px;font-size:11px;font-weight:700;text-align:center}
+.fn.dk{background:var(--navy);color:white;border-color:var(--navy)}
+.fn.gn{background:var(--lg);border-color:var(--green)}
+.fn.or{background:#fff0d0;border-color:var(--orange)}
+.fn.pu{background:var(--lp);border-color:var(--purple)}
+.fn.rd{background:var(--lr);border-color:var(--red)}
+.fa{font-size:13px;color:#555;font-weight:900}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:var(--navy);color:white;padding:3px 6px;text-align:left;font-weight:700;font-size:10.5px}
+td{padding:3px 6px;border-bottom:1px solid #dde4f0;vertical-align:top;font-size:11px}
+tr:nth-child(even) td{background:var(--gray)}
+pre{background:var(--cbg);color:var(--ct);font-family:'Source Code Pro',monospace;font-size:10px;padding:7px 9px;border-radius:4px;overflow-x:auto;line-height:1.5;margin:3px 0;white-space:pre}
+.kw{color:#79b8ff}.str{color:#9ecbff}.cm{color:#6a8099;font-style:italic}.nm{color:#f8c555}
+.tip{background:var(--y2);border:1.5px solid var(--gold);border-radius:4px;padding:5px 7px;font-size:11px;margin-top:4px}
+.tip strong{color:var(--navy)}
+.tkw{background:var(--yellow);border:2px solid var(--gold);border-radius:5px;padding:7px;margin-top:5px;font-size:11.5px}
+.tkwt{font-weight:800;color:var(--navy);margin-bottom:2px}
+.b{font-weight:800}.sm{font-size:11px}.ti{font-size:10.5px}
+.mt3{margin-top:3px}.mt5{margin-top:5px}.mt7{margin-top:7px}
+.mb3{margin-bottom:3px}.mb5{margin-bottom:5px}
+.ct{text-align:center}
+.nv{color:var(--navy)}.gt{color:var(--green)}.rt{color:var(--red)}.ot{color:var(--orange)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.four{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.ib{border:1.5px solid var(--border);border-radius:5px;overflow:hidden;margin-top:4px}
+.ibh{background:var(--navy2);color:white;font-size:10.5px;font-weight:700;padding:3px 7px}
+.ibh.or{background:var(--orange);color:var(--navy)}
+.ibh.bl{background:var(--blue2)}
+.ibh.gn{background:var(--green)}
+.ibh.pu{background:var(--purple)}
+.ibh.rd{background:var(--red)}
+.ibh.tl{background:var(--teal)}
+.ibb{padding:6px;font-size:11px}
+.power-stack{background:var(--navy);border-radius:6px;padding:10px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:5px}
+.ps-item{background:var(--lb2);border:2px solid var(--blue);border-radius:5px;padding:6px 10px;font-size:11.5px;font-weight:800;color:var(--navy);text-align:center;min-width:80px}
+.ps-plus{color:var(--orange2);font-size:20px;font-weight:900}
+.ps-eq{color:var(--orange2);font-size:20px;font-weight:900}
+.ps-result{background:var(--orange);border-color:var(--gold);color:var(--navy)}
+.bb{background:var(--navy);color:white;padding:8px 14px;border-radius:5px;font-size:12px;text-align:center;margin-top:5px;font-style:italic}
+.bb strong{color:var(--orange2)}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-in">
+    <div style="font-size:42px">🤖</div>
+    <div>
+      <h1>CHAPTER 10: <span>CREATING TEXT EMBEDDING MODELS</span></h1>
+      <p>Learn how embedding models work, why they matter, and how to train, fine-tune, and evaluate them with contrastive learning, advanced loss functions, and unsupervised techniques.</p>
+    </div>
+    <div style="font-size:38px">🧠</div>
+  </div>
+</div>
+
+<div class="pg">
+
+<!-- ROW 1 -->
+<div class="row">
+  <!-- 1. WHAT YOU'LL LEARN -->
+  <div class="card">
+    <div class="ch">1. What You'll Learn</div>
+    <div class="cb">
+      <ul class="ck">
+        <li>What embedding models are and how they work</li>
+        <li>Semantic similarity &amp; vector space</li>
+        <li>Contrastive learning explained</li>
+        <li>Training embedding models from scratch</li>
+        <li>Loss functions: Cosine &amp; MNR</li>
+        <li>Fine-tuning with pretrained models</li>
+        <li>Unsupervised learning with TSDAE</li>
+        <li>Domain adaptation</li>
+        <li>Evaluation with STSB &amp; MTEB</li>
+      </ul>
+      <div class="tkw">
+        <div class="tkwt">⭐ Key Takeaway</div>
+        Embedding models convert text to meaningful vectors — the foundation of modern NLP apps!
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. EMBEDDING MODELS: THE BIG PICTURE -->
+  <div class="card c2">
+    <div class="ch">2. Embedding Models: The Big Picture</div>
+    <div class="cb">
+      <div class="sm mb3">Convert unstructured text into usable numerical representations (embeddings).</div>
+      <div class="flow mb4">
+        <div style="font-size:11px;text-align:center">
+          <div class="b mb3">Text Input</div>
+          <div style="font-size:11px">Documents<br>Sentences<br>Phrases<br>…</div>
+        </div>
+        <div class="fa">→</div>
+        <div class="fn pu" style="font-size:10px;padding:8px">Embedding<br>Model (LLM)</div>
+        <div class="fa">→</div>
+        <div>
+          <div class="b sm mb3">Output Embeddings</div>
+          <div style="font-family:monospace;font-size:10px;background:var(--lb2);border:1px solid var(--blue);border-radius:3px;padding:5px">
+            [0.35 -0.12 … 0.78]<br>
+            [0.21 0.91 … -0.34]<br>
+            [-0.11 0.03 … 0.55]
+          </div>
+        </div>
+      </div>
+      <div class="b sm mb3">Used For:</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 6px;font-size:10.5px">Classification</span>
+        <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 6px;font-size:10.5px">Clustering</span>
+        <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 6px;font-size:10.5px">Search</span>
+        <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 6px;font-size:10.5px">Memory</span>
+        <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 6px;font-size:10.5px">Generation</span>
+      </div>
+      <div class="tip mt3">Goal: Capture the semantic meaning as accurately as possible.</div>
+    </div>
+  </div>
+
+  <!-- 3. SEMANTIC SIMILARITY IN VECTOR SPACE -->
+  <div class="card c2">
+    <div class="ch">3. Semantic Similarity in Vector Space</div>
+    <div class="cb">
+      <div class="sm mb3 gt b">Similar meaning → close in vector space</div>
+      <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:5px;padding:8px;font-size:11px;text-align:center;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-around;margin-bottom:4px">
+          <span style="color:var(--green);font-weight:800">⚽ Sports</span>
+          <span style="color:var(--blue2);font-weight:800">💻 Technology</span>
+          <span style="color:var(--red);font-weight:800">🍎 Food</span>
+        </div>
+        <div style="font-size:10px;color:#555">Points clustered by topic in vector space (Dimension 1 vs Dimension 2)</div>
+      </div>
+      <div class="sm rt b">Different meaning → far apart</div>
+      <table style="margin-top:6px">
+        <thead><tr><th>Common Applications</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><b>Semantic Search</b></td><td>Find related content</td></tr>
+          <tr><td><b>Sentiment Analysis</b></td><td>Group by sentiment</td></tr>
+          <tr><td><b>Topic Modeling</b></td><td>Discover themes</td></tr>
+          <tr><td><b>Recommendation</b></td><td>Find similar users/items</td></tr>
+          <tr><td><b>Memory for LLMs</b></td><td>Recall relevant context</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. EMBEDDINGS CAN CAPTURE MANY THINGS -->
+  <div class="card c15">
+    <div class="ch">4. Embeddings Can Capture Many Things</div>
+    <div class="cb">
+      <div class="sm mb3">Different training objective → different organization</div>
+      <div class="two mb4">
+        <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:6px;font-size:11px;text-align:center">
+          <b>By Semantic Meaning</b><br>
+          <span class="gt">● Positive</span> &nbsp; <span class="rt">● Negative</span>
+        </div>
+        <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:6px;font-size:11px;text-align:center">
+          <b>By Sentiment</b><br>
+          <span style="color:var(--blue2)">● Topic A</span> &nbsp; <span class="ot">● Topic B</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 2 -->
+<div class="row">
+  <!-- 5. VISION TRANSFORMER (VIT) IN A NUTSHELL -->
+  <div class="card c2">
+    <div class="ch">5. Vision Transformer (ViT) in a Nutshell</div>
+    <div class="cb">
+      <div class="four">
+        <div>
+          <div class="b sm mb3 nv">1. Patchify Image</div>
+          <div class="sm">Split image into fixed-size patches (e.g., 16×16) &amp; project to vector</div>
+          <div style="background:var(--gray);border:1.5px solid var(--border);border-radius:4px;padding:5px;font-size:10px;margin-top:4px">
+            Patch 1 → E₁<br>Patch 2 → E₂<br>…<br>Patch N → Eₙ
+          </div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">2. Linear Projection</div>
+          <div class="sm">Flatten each patch &amp; project to vector</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:10px;margin-top:4px">
+            E₁ ⊕ Pos<br>E₂ ⊕ Pos<br>…<br>Eₙ ⊕ Pos
+          </div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">3. Add Pos. Embedding</div>
+          <div class="sm">Add positional info</div>
+          <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:4px;padding:5px;font-size:10px;margin-top:4px">
+            Eₙ ⊕ Pos
+          </div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">4. Transformer Encoder</div>
+          <div class="sm">Process like tokens</div>
+          <div class="flow mt3" style="flex-direction:column;align-items:flex-start;gap:2px">
+            <div class="fn pu" style="font-size:10px;width:100%">Transformer Encoder</div>
+            <div class="fa">⬇</div>
+            <div class="fn gn" style="font-size:10px;width:100%">Output Representations</div>
+          </div>
+        </div>
+      </div>
+      <div class="tip mt3">ViT treats image patches like words/tokens — enabling use of the Transformer encoder!</div>
+    </div>
+  </div>
+
+  <!-- 6. CLIP: CONNECTING TEXT & IMAGES -->
+  <div class="card c15">
+    <div class="ch">6. CLIP: Connecting Text &amp; Images</div>
+    <div class="cb">
+      <div class="sm mb3">CLIP maps text and images into the same vector space.</div>
+      <div class="flow mb4">
+        <div class="fn pu" style="font-size:10px">Text Encoder<br>(Transformer)</div>
+        <div class="fa">→</div>
+        <div style="background:var(--yellow);border:2px solid var(--gold);border-radius:4px;padding:4px 7px;font-size:10px;font-weight:700;text-align:center">Contrastive<br>Learning</div>
+        <div class="fa">←</div>
+        <div class="fn or" style="font-size:10px">Image Encoder<br>(ViT)</div>
+      </div>
+      <ul class="ck">
+        <li>Maximize similarity for matching text-image pairs</li>
+        <li>Minimize similarity for non-matching pairs</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 7. CLIP SIMILARITY MATRIX EXAMPLE -->
+  <div class="card c2">
+    <div class="ch">7. CLIP Similarity Matrix Example</div>
+    <div class="cb">
+      <div class="sm mb3">3 images × 3 captions → cosine similarity scores</div>
+      <table>
+        <thead>
+          <tr><th>Images →</th><th>C1<br>("Puppy in snow")</th><th>C2<br>("Sunset at beach")</th><th>C3<br>("Sports car")</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>I1 (Puppy)</b></td><td style="background:#e8f5eb;font-weight:800;color:var(--green)">0.93</td><td style="background:var(--lr);color:var(--red)">-0.21</td><td>0.05</td></tr>
+          <tr><td><b>I2 (Sunset)</b></td><td>0.02</td><td style="background:#e8f5eb;font-weight:800;color:var(--green)">0.91</td><td style="background:var(--lr);color:var(--red)">-0.10</td></tr>
+          <tr><td><b>I3 (Car)</b></td><td>0.01</td><td style="background:var(--lr);color:var(--red)">-0.12</td><td style="background:#e8f5eb;font-weight:800;color:var(--green)">0.92</td></tr>
+        </tbody>
+      </table>
+      <div class="sm mt3"><span class="gt">High = similar meaning</span> &nbsp;|&nbsp; <span class="rt">Low/Negative = dissimilar</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 3 -->
+<div class="row">
+  <!-- 8. CROSS-ENCODER vs BI-ENCODER -->
+  <div class="card c2">
+    <div class="ch">8. Cross-Encoder (BERT) vs Bi-Encoder (SBERT)</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3 rt">Cross-Encoder / BERT</div>
+          <div class="sm mb3">Slow but accurate</div>
+          <div style="background:var(--lr);border:1.5px solid var(--red);border-radius:4px;padding:5px;font-size:10.5px">
+            Sentence A + Sentence B → BERT → [CLS] → FeedFwd. → Score
+          </div>
+          <div style="font-size:11px;margin-top:4px">Sentence A: Embedding S<br>Sentence B: FeedFwd.</div>
+        </div>
+        <div>
+          <div class="b sm mb3 gt">Bi-Encoder / SBERT (Siamese)</div>
+          <div class="sm mb3">Fast &amp; scalable</div>
+          <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:4px;padding:5px;font-size:10.5px">
+            Sentence A → BERT (shared weights) → Pooling (mean / [CLS])<br>
+            Sentence B → BERT (shared weights) → Pooling (mean / [CLS])<br>
+            → Cosine Similarity
+          </div>
+        </div>
+      </div>
+      <div class="tip mt3">Bi-encoders scale to millions of comparisons!</div>
+    </div>
+  </div>
+
+  <!-- 9. CONTRASTIVE LEARNING EXPLAINED -->
+  <div class="card c2">
+    <div class="ch">9. Contrastive Learning Explained</div>
+    <div class="cb">
+      <div class="sm mb3">Contrastive learning teaches the model what makes things similar.</div>
+      <div class="two mb4">
+        <div style="background:var(--lg);border:1.5px solid var(--green);border-radius:4px;padding:6px;font-size:11px">
+          <div class="b mb3 gt">Positive Pair (Similar)</div>
+          "The Eiffel Tower is in Paris."<br>
+          "The Eiffel Tower is located in Paris."<br>
+          <div style="font-size:18px;text-align:center;margin-top:4px">✅ Push Together</div>
+        </div>
+        <div>
+          <div style="background:var(--lr);border:1.5px solid var(--red);border-radius:4px;padding:6px;font-size:11px;margin-bottom:4px">
+            <div class="b mb3 rt">Hard Negative (Dissimilar topic)</div>
+            "Mailing Günsler topic…"<br>
+            <div style="font-size:18px;text-align:center;margin-top:4px">❌ Push Apart (Hard)</div>
+          </div>
+          <div style="background:var(--gray);border:1.5px solid var(--border);border-radius:4px;padding:6px;font-size:11px">
+            <div class="b mb3">Easy Negative (Dissimilar)</div>
+            "Positive in Utrecht."<br>
+            <div style="font-size:18px;text-align:center;margin-top:4px">❌ Push Apart (Easy)</div>
+          </div>
+        </div>
+      </div>
+      <div class="sm">Contrastive learning pulls similar pairs together and pushes apart pairs in vector space.</div>
+      <div class="tip mt3">— and what makes them different.</div>
+    </div>
+  </div>
+
+  <!-- 10. BLIP-2: BRIDGING VISION & LANGUAGE -->
+  <div class="card c2">
+    <div class="ch">10. BLIP-2: Bridging Vision &amp; Language</div>
+    <div class="cb">
+      <div class="sm mb3">Connect a frozen ViT and an LLM with a trainable Q-Former.</div>
+      <div class="flow mb4">
+        <div class="fn or" style="font-size:10px">Image</div><div class="fa">→</div>
+        <div style="text-align:center;font-size:11px">
+          <div style="background:var(--gray);border:1.5px solid var(--border);border-radius:4px;padding:3px 6px;font-size:10px;font-weight:700">ViT<br>(Image Encoder)</div>
+          <div style="font-size:9px">Image Embeddings</div>
+        </div>
+        <div class="fa">→</div>
+        <div style="text-align:center;font-size:11px">
+          <div style="background:var(--orange);color:var(--navy);border:1.5px solid var(--gold);border-radius:4px;padding:3px 6px;font-size:10px;font-weight:700">Q-Former<br>(Trainable) 🔥</div>
+        </div>
+        <div class="fa">→</div>
+        <div style="text-align:center;font-size:11px">
+          <div style="background:var(--gray);border:1.5px solid var(--border);border-radius:4px;padding:3px 6px;font-size:10px;font-weight:700">LLM<br>(Language Model)</div>
+        </div>
+        <div class="fa">→</div>
+        <div class="fn gn" style="font-size:10px">Text</div>
+      </div>
+      <div class="two">
+        <div>
+          <div class="b sm mb3">Stage 1: Representation Learning</div>
+          <ul class="ck">
+            <li class="d">Image-Text Contrastive Learning</li>
+            <li class="d">Image-Text Matching</li>
+            <li class="d">Image-Grounded Text Generation</li>
+          </ul>
+        </div>
+        <div>
+          <div class="b sm mb3">Stage 2: Vision-to-Language Generation</div>
+          <ul class="ck">
+            <li class="d">Q-Former outputs act as soft prompts for the LLM</li>
+            <li class="d">LLM generates answers / captions</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 4 -->
+<div class="row">
+  <!-- 11. TRAINING FROM SCRATCH: KEY STEPS -->
+  <div class="card c15">
+    <div class="ch">11. Training from Scratch: Key Steps</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3 nv">1. Prepare Data 2. Choose Loss</div>
+          <div class="sm mb3">(e.g., MNL)</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:10.5px">
+            <b>Equal None</b><br>Neutral (off)
+          </div>
+          <div style="font-size:18px;text-align:center;margin:4px 0">⬇</div>
+          <div style="background:var(--orange);color:var(--navy);border:1.5px solid var(--gold);border-radius:4px;padding:5px;font-size:10.5px;text-align:center"><b>Better Embeddings</b><br>Domain</div>
+          <div class="tip mt3">Pretrain on your domain → fine-tune for best results!</div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">Step 2: Supervised Fine-Tuning</div>
+          <div class="sm mb3">(Gold or Out-of-Domain Data)</div>
+          <div class="flow" style="flex-direction:column;align-items:flex-start;gap:2px">
+            <div class="fn" style="font-size:10px;width:100%">Contrastive Fine-Tuning</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. LOSS FUNCTIONS -->
+  <div class="card c2">
+    <div class="ch">12. Loss Functions</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3 nv">Cosine Similarity Loss</div>
+          <div class="sm mb3">For similarity scores (0 to 1)</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:11px;text-align:center">
+            Minimize: [cos(a, b) – label]²
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;margin:5px 0;font-size:11px">
+            <div style="background:var(--blue2);color:white;border-radius:3px;padding:2px 5px;font-size:10px">A</div>
+            <div style="color:var(--navy);font-weight:800">→ 0.85 ←</div>
+            <div style="background:var(--green);color:white;border-radius:3px;padding:2px 5px;font-size:10px">P</div>
+          </div>
+          <ul class="ck">
+            <li>Intuitive</li>
+            <li>Works with soft similarity scores</li>
+            <li>Good for STS tasks</li>
+          </ul>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">Multiple Negatives Ranking Loss (InfoNCE / NTXent)</div>
+          <div class="sm mb3">For positive pairs + in-batch negatives</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:11px;text-align:center">
+            Maximize: s(a, p) &gt; s(a, n₁), s(a, n₂), …
+          </div>
+          <div style="font-size:10.5px;margin-top:5px;text-align:center">Anchor (a) → Positive + Negatives (N₁, N₂…)</div>
+          <ul class="ck mt3">
+            <li>Requires large batch</li>
+            <li>Strong performance</li>
+            <li>Most commonly used</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13. UNSUPERVISED LEARNING: TSDAE -->
+  <div class="card c2">
+    <div class="ch">13. Unsupervised Learning: TSDAE</div>
+    <div class="cb">
+      <div class="sm mb3">Transformer-based Sequential Denoising Auto-Encoder</div>
+      <div class="flow mb4">
+        <div class="fn dk" style="font-size:10px">Input Sentence<br>"The quick brown fox jumps over the lazy dog."</div>
+        <div class="fa">→</div>
+        <div class="fn rd" style="font-size:10px">Add Noise<br>(Remove words)</div>
+        <div class="fa">→</div>
+        <div style="text-align:center;font-size:10px">
+          <div>"The brown fox over the lazy dog."</div>
+        </div>
+        <div class="fa">→</div>
+        <div class="fn pu" style="font-size:10px">Encoder<br>(BERT)<br>Pooling<br>(CLS/Mean)</div>
+        <div class="fa">→</div>
+        <div class="fn or" style="font-size:10px">Decoder</div>
+        <div class="fa">→</div>
+        <div class="fn gn" style="font-size:10px">Reconstruct<br>Original<br>"The quick brown fox jumps over the lazy dog."</div>
+      </div>
+      <ul class="ck">
+        <li>No labels needed</li>
+        <li>Learns meaningful sentence embeddings</li>
+        <li>Great for domain adaptation &amp; low-resource settings</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 5 -->
+<div class="row">
+  <!-- 14. DOMAIN ADAPTATION -->
+  <div class="card c15">
+    <div class="ch">14. Domain Adaptation (Adaptive Pretraining)</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3 nv">Step 1: Unsupervised Pretraining</div>
+          <div class="sm mb3">(Target Domain Corpus)</div>
+          <div class="flow" style="flex-direction:column;align-items:flex-start;gap:2px">
+            <div class="fn dk" style="font-size:10px;width:100%">TSDAE / MLM on domain text</div>
+          </div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">Step 2: Supervised Fine-Tuning</div>
+          <div class="sm mb3">(Gold or Out-of-Domain Data)</div>
+          <div class="flow" style="flex-direction:column;align-items:flex-start;gap:2px">
+            <div class="fn gn" style="font-size:10px;width:100%">Contrastive Fine-Tuning</div>
+          </div>
+        </div>
+      </div>
+      <div class="tip mt5">Pretrain on your domain → fine-tune for best results!</div>
+    </div>
+  </div>
+
+  <!-- 15. EVALUATION: STSB & MTEB -->
+  <div class="card c2">
+    <div class="ch">15. Evaluation: STSB &amp; MTEB</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3 nv">STSB (Semantic Textual Similarity)</div>
+          <div class="sm mb3">Human-rated similarity (0–1)</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:10.5px;text-align:center">
+            "A man is playing guitar." ≈ "A person plays the guitar."<br>
+            <b>Score: 0.72</b>
+          </div>
+          <div class="sm mt3">Metric: Pearson / Spearman (Cosine)</div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">MTEB (Massive Text Embedding Benchmark)</div>
+          <div class="sm mb3">8 tasks · 58 datasets · 112 languages</div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap">
+            <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 5px;font-size:10px">Classification</span>
+            <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 5px;font-size:10px">Clustering</span>
+            <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 5px;font-size:10px">Retrieval</span>
+            <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 5px;font-size:10px">STS</span>
+            <span style="background:var(--navy);color:white;border-radius:3px;padding:2px 5px;font-size:10px">Reranking</span>
+          </div>
+          <div class="sm mt3">Comprehensive leaderboard for embedding models!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 16. HANDS-ON CODE SNAPSHOT -->
+  <div class="card c2">
+    <div class="ch">16. Hands-On Code Snapshot (Key Components)</div>
+    <div class="cb">
+      <div class="three">
+        <div>
+          <div class="b sm mb3">Load Model</div>
+<pre><span class="kw">from</span> sentence_transformers
+  <span class="kw">import</span> SentenceTransformer
+
+model = SentenceTransformer(
+  <span class="str">'all-MiniLM-L6-v2'</span>)</pre>
+        </div>
+        <div>
+          <div class="b sm mb3">Encode Sentences</div>
+<pre>embeddings = model.encode(
+  [<span class="str">'Hello world'</span>,
+   <span class="str">'Hi there!'</span>])
+<span class="cm"># shape: (2, 384)</span></pre>
+        </div>
+        <div>
+          <div class="b sm mb3">Compute Similarity</div>
+<pre><span class="kw">from</span> sentence_transformers
+  <span class="kw">import</span> util
+
+sim = util.cos_sim(
+  embeddings[<span class="nm">0</span>],
+  embeddings[<span class="nm">1</span>])
+<span class="cm"># cosine similarity score</span></pre>
+        </div>
+      </div>
+      <div class="tip mt3">Simple API, powerful embeddings.</div>
+    </div>
+  </div>
+
+  <!-- 17. KEY TAKEAWAYS -->
+  <div class="card">
+    <div class="ch or">17. Key Takeaways</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="st">Embeddings turn text into meaningful numbers.</li>
+        <li class="st">Contrastive learning is key to learning similarity.</li>
+        <li class="st">Loss functions &amp; data quality matter most.</li>
+        <li class="st">Pretrained models + fine-tuning &gt; training from scratch.</li>
+        <li class="st">Evaluate well — don't trust just one metric.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 6 -->
+<div class="row">
+  <!-- 18. BEST PRACTICES -->
+  <div class="card c15">
+    <div class="ch or">18. Best Practices</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="st">Use strong pretrained models</li>
+        <li class="st">Choose the right loss (Cosine / MNR / TSDAE)</li>
+        <li class="st">Use hard negatives when possible</li>
+        <li class="st">Evaluate on STSB + MTEB</li>
+        <li class="st">Monitor training &amp; iterate</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- EMBEDDING POWER STACK -->
+  <div class="card c3">
+    <div class="ch or">The Embedding Power Stack</div>
+    <div class="cb">
+      <div class="power-stack">
+        <div class="ps-item">📊<br>Data<br><span style="font-size:10px;font-weight:400">(Text)</span></div>
+        <div class="ps-plus">+</div>
+        <div class="ps-item">🤖<br>Model<br><span style="font-size:10px;font-weight:400">(Transformer)</span></div>
+        <div class="ps-plus">+</div>
+        <div class="ps-item">🔄<br>Training<br><span style="font-size:10px;font-weight:400">(Contrastive)</span></div>
+        <div class="ps-plus">+</div>
+        <div class="ps-item">📏<br>Evaluation<br><span style="font-size:10px;font-weight:400">(Metrics)</span></div>
+        <div class="ps-eq">=</div>
+        <div class="ps-item ps-result">⭐<br>Powerful<br>Embeddings</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 19. NEXT UP -->
+  <div class="card">
+    <div class="ch or">19. Next Up</div>
+    <div class="cb">
+      <div style="font-size:13px;font-weight:700;color:var(--navy);line-height:1.6">
+        In Chapter 11, we apply embedding models to real-world search systems and RAG pipelines!
+      </div>
+      <div style="text-align:center;font-size:32px;margin-top:8px">🚀</div>
+    </div>
+  </div>
+</div>
+
+<div class="bb">
+  <strong>"Good embeddings are the invisible engine behind the most powerful NLP applications."</strong>
+</div>
+
+</div>
+</body>
+</html>

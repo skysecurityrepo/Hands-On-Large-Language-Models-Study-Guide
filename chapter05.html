@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 5: Text Clustering &amp; Topic Modeling</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Source+Code+Pro:wght@400;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#1a2744;--navy2:#1e3060;--orange:#e8a020;--orange2:#f5b830;--blue:#2255cc;--blue2:#3366dd;--lb:#dce8ff;--lb2:#eaf0ff;--yellow:#fff3b0;--y2:#fffae0;--green:#2a7a3b;--lg:#e8f5eb;--red:#cc2222;--lr:#fdecea;--gray:#f4f6fb;--border:#b8c8e8;--text:#1a2030;--cbg:#1e2a40;--ct:#e8f0ff;--gold:#c8960c;--purple:#6633aa;--lp:#f0e8ff;--teal:#0d7070}
+body{font-family:'Nunito',sans-serif;background:#e8ecf8;color:var(--text);font-size:13px;line-height:1.5}
+.hdr{background:var(--navy);color:white;text-align:center;padding:14px 20px 10px;border-bottom:4px solid var(--orange)}
+.hdr-in{display:flex;align-items:center;justify-content:center;gap:12px}
+.hdr h1{font-size:21px;font-weight:900;line-height:1.1}
+.hdr h1 span{color:var(--orange)}
+.hdr p{font-size:11px;color:#c8d4f0;max-width:950px;margin:3px auto 0}
+.pg{max-width:1440px;margin:0 auto;padding:7px 7px 18px;display:flex;flex-direction:column;gap:7px}
+.row{display:flex;gap:7px}
+.row>*{flex:1;min-width:0}
+.c2{flex:2}.c3{flex:3}.c15{flex:1.5}
+.card{background:white;border:1.5px solid var(--border);border-radius:7px;overflow:hidden}
+.ch{background:var(--navy);color:white;font-size:11px;font-weight:800;padding:4px 8px;text-transform:uppercase;letter-spacing:.3px}
+.ch.or{background:var(--orange);color:var(--navy)}
+.ch.gr{background:var(--green)}
+.ch.rd{background:var(--red)}
+.ch.bl{background:var(--blue2)}
+.ch.pu{background:var(--purple)}
+.ch.tl{background:var(--teal)}
+.cb{padding:8px}
+ul.ck{list-style:none}
+ul.ck li{display:flex;gap:5px;align-items:flex-start;margin-bottom:3px;font-size:11.5px}
+ul.ck li::before{content:"✅";font-size:10px;margin-top:1px;flex-shrink:0}
+ul.ck li.x::before{content:"❌"}
+ul.ck li.d::before{content:"•";font-size:13px;color:var(--navy);margin-top:0}
+ul.ck li.st::before{content:"⭐"}
+ul.ck li.wa::before{content:"⚠️"}
+.flow{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin:4px 0}
+.fn{background:var(--lb);border:1.5px solid var(--blue);border-radius:4px;padding:3px 7px;font-size:11px;font-weight:700;text-align:center}
+.fn.dk{background:var(--navy);color:white;border-color:var(--navy)}
+.fn.gn{background:var(--lg);border-color:var(--green)}
+.fn.or{background:#fff0d0;border-color:var(--orange)}
+.fn.pu{background:var(--lp);border-color:var(--purple)}
+.fa{font-size:13px;color:#555;font-weight:900}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:var(--navy);color:white;padding:3px 6px;text-align:left;font-weight:700;font-size:10.5px}
+td{padding:3px 6px;border-bottom:1px solid #dde4f0;vertical-align:top;font-size:11px}
+tr:nth-child(even) td{background:var(--gray)}
+pre{background:var(--cbg);color:var(--ct);font-family:'Source Code Pro',monospace;font-size:10px;padding:7px 9px;border-radius:4px;overflow-x:auto;line-height:1.5;margin:3px 0;white-space:pre}
+.kw{color:#79b8ff}.str{color:#9ecbff}.cm{color:#6a8099;font-style:italic}.nm{color:#f8c555}
+.tip{background:var(--y2);border:1.5px solid var(--gold);border-radius:4px;padding:5px 7px;font-size:11px;margin-top:4px}
+.tip strong{color:var(--navy)}
+.tkw{background:var(--yellow);border:2px solid var(--gold);border-radius:5px;padding:7px;margin-top:5px;font-size:11.5px}
+.tkwt{font-weight:800;color:var(--navy);margin-bottom:2px}
+.b{font-weight:800}.sm{font-size:11px}.ti{font-size:10.5px}
+.mt3{margin-top:3px}.mt5{margin-top:5px}.mt7{margin-top:7px}
+.mb3{margin-bottom:3px}.mb5{margin-bottom:5px}
+.ct{text-align:center}
+.nv{color:var(--navy)}.gt{color:var(--green)}.rt{color:var(--red)}.ot{color:var(--orange)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.four{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.ib{border:1.5px solid var(--border);border-radius:5px;overflow:hidden;margin-top:4px}
+.ibh{background:var(--navy2);color:white;font-size:10.5px;font-weight:700;padding:3px 7px}
+.ibh.or{background:var(--orange);color:var(--navy)}
+.ibh.bl{background:var(--blue2)}
+.ibh.gn{background:var(--green)}
+.ibh.pu{background:var(--purple)}
+.ibh.rd{background:var(--red)}
+.ibb{padding:6px;font-size:11px}
+.bb{background:var(--navy);color:white;padding:9px 14px;border-radius:5px;font-size:12px;text-align:center;margin-top:5px}
+.bb strong{color:var(--orange2)}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-in">
+    <div style="font-size:42px">🤖</div>
+    <div>
+      <h1>CHAPTER 5: <span>TEXT CLUSTERING &amp; TOPIC MODELING</span></h1>
+      <p>Discovering structure and themes in large collections of text without labels. We combine embedding models, dimensionality reduction, clustering, and representation models (classic + generative) to cluster documents and extract meaningful topics.</p>
+    </div>
+    <div style="font-size:38px">🧠</div>
+  </div>
+</div>
+
+<div class="pg">
+
+<!-- ROW 1: Overview -->
+<div class="row">
+  <!-- 1. WHAT IS TEXT CLUSTERING -->
+  <div class="card">
+    <div class="ch">1. What is Text Clustering?</div>
+    <div class="cb">
+      <div class="sm mb3">Group semantically similar texts based on meaning and relationships.</div>
+      <ul class="ck">
+        <li>Efficiently organize large volumes of unstructured text</li>
+        <li>Enables exploratory data analysis</li>
+        <li>Find outliers, speed up labeling, and detect mislabeled data</li>
+        <li>Works without supervision</li>
+      </ul>
+      <div class="tkw mt5">
+        <div class="tkwt">Example:</div>
+        Cluster ArXiv papers to discover hidden research themes.
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. WHAT IS TOPIC MODELING -->
+  <div class="card">
+    <div class="ch">2. What is Topic Modeling?</div>
+    <div class="cb">
+      <div class="sm mb3">Discover (abstract) topics in a collection of documents.</div>
+      <ul class="ck">
+        <li>Topics are described by keywords or keyphrases</li>
+        <li>Each topic has one overarching label (usually)</li>
+        <li>Helps summarize large corpora and understand main themes</li>
+      </ul>
+      <div class="ib mt3">
+        <div class="ibh or">Example Topic:</div>
+        <div class="ibb">
+          Topic label: <b>Neural Machine Translation</b><br>
+          Keywords: translation, nmt, machine, neural, seqseq, attention, bleu
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. DATASET: ARXIV COMPUTATION & LANGUAGE -->
+  <div class="card c2">
+    <div class="ch">3. Dataset: ArXiv Computation &amp; Language</div>
+    <div class="cb">
+      <div class="sm mb3">We use 44,949 abstracts from ArXiv's cs.CL (Computation and Language) collection between 1991–2024.</div>
+<pre><span class="kw">from</span> datasets <span class="kw">import</span> load_dataset
+
+dataset = load_dataset(<span class="str">"maartengr/arxiv_nlp"</span>)[<span class="str">"train"</span>]
+abstracts = dataset[<span class="str">"Abstracts"</span>]
+titles = dataset[<span class="str">"Titles"</span>]
+years = dataset[<span class="str">"Years"</span>]</pre>
+      <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">
+        <div style="text-align:center;font-size:12px"><div style="font-size:28px">📄</div><b>44,949</b><br>Abstracts</div>
+        <div style="text-align:center;font-size:12px"><div style="font-size:28px">📅</div><b>1991–2024</b><br>Years</div>
+        <div style="text-align:center;font-size:12px"><div style="font-size:28px">&lt;&gt;</div><b>cs.CL</b><br>Section</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. COMMON PIPELINE FOR TEXT CLUSTERING -->
+  <div class="card">
+    <div class="ch">4. Common Pipeline for Text Clustering</div>
+    <div class="cb">
+      <div class="sm mb3">A widely used 3-step pipeline:</div>
+      <ol style="list-style:none;padding:0">
+        <li style="display:flex;gap:6px;margin-bottom:6px;font-size:11.5px">
+          <span style="background:var(--navy);color:white;border-radius:50%;width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">1</span>
+          <div><b>Embed Documents</b><br>Convert text → embeddings using an embedding model.</div>
+        </li>
+        <li style="display:flex;gap:6px;margin-bottom:6px;font-size:11.5px">
+          <span style="background:var(--navy);color:white;border-radius:50%;width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">2</span>
+          <div><b>Reduce Dimensionality</b><br>Compress embeddings to a lower-dimensional space (e.g., UMAP).</div>
+        </li>
+        <li style="display:flex;gap:6px;margin-bottom:6px;font-size:11.5px">
+          <span style="background:var(--navy);color:white;border-radius:50%;width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">3</span>
+          <div><b>Cluster Documents</b><br>Find groups of similar documents (e.g., HDBSCAN).</div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 2: The 3-Step Pipeline in Detail -->
+<div class="row">
+  <!-- Step 1: Embedding -->
+  <div class="card c15">
+    <div class="ch bl">① Embedding Documents</div>
+    <div class="cb">
+      <div class="sm mb3">Convert documents to dense vector representations that capture semantic meaning.</div>
+      <div class="sm mb3"><b>Model Example:</b> thenlper/gte-small</div>
+<pre><span class="kw">from</span> sentence_transformers <span class="kw">import</span> SentenceTransformer
+
+model = SentenceTransformer(<span class="str">"thenlper/gte-small"</span>)
+embeddings = model.encode(abstracts, show_progress_bar=<span class="kw">True</span>)</pre>
+      <div class="sm mt3"><b>Output:</b> Each document → 384-dimensional vector</div>
+      <table style="margin-top:5px">
+        <thead><tr><th>Document</th><th>Embedding Vector (384 dims)</th></tr></thead>
+        <tbody>
+          <tr><td>Doc 1</td><td style="font-family:monospace;font-size:10px">[0.21, 0.14, …, -0.33, …]</td></tr>
+          <tr><td>Doc 2</td><td style="font-family:monospace;font-size:10px">[0.04, -0.22, …, 0.11, …]</td></tr>
+          <tr><td>…</td><td>…</td></tr>
+          <tr><td>Doc 44949</td><td style="font-family:monospace;font-size:10px">[-0.09, 0.31, …, 0.08, …]</td></tr>
+        </tbody>
+      </table>
+      <div class="tip mt3">Use embedding models optimized for semantic similarity. Good embeddings = better clusters.</div>
+    </div>
+  </div>
+
+  <!-- Step 2: UMAP -->
+  <div class="card c2">
+    <div class="ch bl">② Reduce Dimensionality (UMAP)</div>
+    <div class="cb">
+      <div class="sm mb3">High-dimensional data is hard to cluster. UMAP preserves global structure in fewer dimensions.</div>
+<pre><span class="kw">from</span> umap <span class="kw">import</span> UMAP
+
+umap_model = UMAP(n_components=<span class="nm">5</span>, min_dist=<span class="nm">0.0</span>,
+                  metric=<span class="str">"cosine"</span>, random_state=<span class="nm">42</span>)
+reduced_embeddings = umap_model.fit_transform(embeddings)</pre>
+      <div class="two mt3">
+        <div style="text-align:center;font-size:11px">
+          <div class="fn dk" style="margin-bottom:3px">Input: 384-D Embeddings</div>
+          <div style="font-size:18px">⬇</div>
+          <div style="background:var(--lp);border:1.5px solid var(--purple);border-radius:4px;padding:4px;font-size:11px;font-weight:700">UMAP<br>(Reduce)</div>
+          <div style="font-size:18px">⬇</div>
+          <div class="fn gn" style="margin-top:3px">Output: 5-D Embeddings</div>
+        </div>
+        <div style="font-size:11px">
+          <b>Why UMAP?</b>
+          <ul class="ck mt3">
+            <li>Handles nonlinear structures well &amp; keeps clusters tight.</li>
+            <li>n_components: 5–10 works well in practice.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: HDBSCAN -->
+  <div class="card c2">
+    <div class="ch bl">③ Cluster Reduced Embeddings (HDBSCAN)</div>
+    <div class="cb">
+      <div class="sm mb3">Density-based clustering. Finds clusters of any shape. Automatically detects outliers.</div>
+<pre><span class="kw">from</span> hdbscan <span class="kw">import</span> HDBSCAN
+
+hdbscan_model = HDBSCAN(min_cluster_size=<span class="nm">50</span>,
+    cluster_selection_method=<span class="str">"eom"</span>)
+clusters = hdbscan_model.fit_predict(reduced_embeddings)</pre>
+      <div class="b sm mt3">Result:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">
+        <span style="background:#3366dd;color:white;border-radius:3px;padding:2px 6px;font-size:10.5px">Cluster 0</span>
+        <span style="background:#cc5533;color:white;border-radius:3px;padding:2px 6px;font-size:10.5px">Cluster 1</span>
+        <span style="background:#2a7a3b;color:white;border-radius:3px;padding:2px 6px;font-size:10.5px">Cluster 2</span>
+        <span style="background:#8840cc;color:white;border-radius:3px;padding:2px 6px;font-size:10.5px">Cluster 3</span>
+        <span style="background:#888;color:white;border-radius:3px;padding:2px 6px;font-size:10.5px">…</span>
+        <span style="background:#555;color:white;border-radius:3px;padding:2px 6px;font-size:10.5px">Cluster 155</span>
+        <span style="background:#ddd;color:#333;border-radius:3px;padding:2px 6px;font-size:10.5px">Outliers (-1)</span>
+      </div>
+      <div class="tip mt3">Lower min_cluster_size → more clusters. Outliers (-1) are points that don't belong to any cluster.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 3 -->
+<div class="row">
+  <!-- 6. INSPECTING & VISUALIZING CLUSTERS -->
+  <div class="card c15">
+    <div class="ch">6. Inspecting &amp; Visualizing Clusters</div>
+    <div class="cb">
+      <div class="sm mb3">Explore clusters to understand their content.</div>
+      <div class="ib mb4">
+        <div class="ibh bl">A. Inspect Manually</div>
+        <div class="ibb">
+          Show sample abstracts from a cluster:
+<pre>cluster = <span class="nm">0</span>
+indices = np.where(
+  clusters==cluster)[<span class="nm">0</span>][:<span class="nm">3</span>]
+<span class="kw">for</span> i <span class="kw">in</span> indices:
+  print(abstracts[i][:<span class="nm">300</span>],
+        <span class="str">"...\n"</span>)</pre>
+        </div>
+      </div>
+      <div class="ib">
+        <div class="ibh or">B. Visualize (2D with UMAP)</div>
+        <div class="ibb">Plot clusters &amp; outliers in 2D for exploration.</div>
+      </div>
+      <div class="tip mt3">Visualization helps but loses some information. Always validate clusters manually!</div>
+      <div style="display:flex;align-items:center;justify-content:center;margin-top:5px;font-size:28px">⚠️</div>
+    </div>
+  </div>
+
+  <!-- 7. FROM TEXT CLUSTERING TO TOPIC MODELING -->
+  <div class="card c2">
+    <div class="ch">7. From Text Clustering to Topic Modeling</div>
+    <div class="cb">
+      <div class="sm mb3">Clusters are groups of similar documents.<br>→ We describe each cluster (topic) using keywords or keyphrases.</div>
+      <div class="two">
+        <div>
+          <div class="b sm mb3">Classic Topic Modeling (Bag-of-Words)</div>
+          <div class="sm mb3">Counts word frequency per topic (cluster).</div>
+          <table>
+            <thead><tr><th>Word</th><th>Count</th></tr></thead>
+            <tbody>
+              <tr><td>topic</td><td>812</td></tr>
+              <tr><td>modeling</td><td>523</td></tr>
+              <tr><td>document</td><td>412</td></tr>
+              <tr><td>lda</td><td>399</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class="b sm mb3">Goal: Find the most representative keywords for each topic.</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:8px;font-size:13px;font-weight:700;text-align:center;color:var(--navy);line-height:1.8;letter-spacing:1px">
+            topic &nbsp; modeling &nbsp; documents<br>
+            <span style="font-size:11px;color:#555">lda &nbsp; tarent &nbsp; topic &nbsp; lotsof &nbsp; words</span>
+          </div>
+          <div class="tip mt3">Traditional methods ignore context. We use semantic embeddings for better topic discovery.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. BERTOPIC: MODULAR TOPIC MODELING FRAMEWORK -->
+  <div class="card c3">
+    <div class="ch tl">8. BERTopic: Modular Topic Modeling Framework</div>
+    <div class="cb">
+      <div class="sm mb3">BERTopic = Clustering pipeline + Topic Representation</div>
+      <div class="row" style="gap:7px">
+        <div style="flex:2">
+          <div class="b sm mb3">Step 1: Clustering Pipeline</div>
+          <div class="flow">
+            <div class="fn" style="font-size:10px">Embedding<br>Model</div><div class="fa">→</div>
+            <div class="fn pu" style="font-size:10px">Dimensionality<br>Reduction<br>(UMAP)</div><div class="fa">→</div>
+            <div class="fn or" style="font-size:10px">Clustering<br>(HDBSCAN)</div><div class="fa">→</div>
+            <div class="fn gn" style="font-size:10px">Clusters of<br>Documents</div>
+          </div>
+          <div class="b sm mt5 mb3">Step 2: Topic Representation</div>
+          <div class="flow">
+            <div class="fn" style="font-size:10px">Bag-of-Words<br>(c-TF)</div><div class="fa">→</div>
+            <div class="fn" style="font-size:10px">Weighting<br>(c-TF-IDF)</div><div class="fa">→</div>
+            <div class="fn gn" style="font-size:10px">Topic<br>Representations<br>(Keywords)</div>
+          </div>
+        </div>
+        <div style="flex:1">
+          <div class="b sm mb3">Key Advantages</div>
+          <ul class="ck">
+            <li>Highly modular</li>
+            <li>Each step is replaceable</li>
+            <li>Works with many models</li>
+            <li>Detects outliers</li>
+            <li>Scalable &amp; extensible</li>
+            <li>Works with new models as they emerge</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 4 -->
+<div class="row">
+  <!-- 9. TOPIC REPRESENTATION WITH C-TF-IDF -->
+  <div class="card c2">
+    <div class="ch">9. Topic Representation with c-TF-IDF</div>
+    <div class="cb">
+      <div class="three">
+        <div>
+          <div class="b sm mb3">Step 1: Count words per cluster (c-TF)</div>
+          <table>
+            <thead><tr><th>Cluster (Topic)</th><th>Word</th><th>Count</th></tr></thead>
+            <tbody>
+              <tr><td>22</td><td>topic</td><td>812</td></tr>
+              <tr><td>22</td><td>modeling</td><td>523</td></tr>
+              <tr><td>22</td><td>document</td><td>412</td></tr>
+              <tr><td>…</td><td>…</td><td>…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class="b sm mb3">Step 2: Compute IDF</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:6px;font-size:11px;font-family:monospace;text-align:center">
+            IDF(word) = log(<br>avg_freq_all_clusters<br>──────────────────<br>total_freq_word<br>)
+          </div>
+          <div class="sm mt3"><b>Step 3: c-TF-IDF = c-TF × IDF</b><br>Higher score = more representative</div>
+        </div>
+        <div>
+          <div class="b sm mb3">Cluster 22 — c-TF-IDF Scores</div>
+          <table>
+            <thead><tr><th>Word</th><th>c-TF-IDF</th></tr></thead>
+            <tbody>
+              <tr><td>topic</td><td>0.066</td></tr>
+              <tr><td>modeling</td><td>0.036</td></tr>
+              <tr><td>lda</td><td>0.016</td></tr>
+              <tr><td>…</td><td>…</td></tr>
+            </tbody>
+          </table>
+          <div class="tip mt3">Result: Ranked keywords for each topic.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. IMPROVING TOPIC REPRESENTATIONS -->
+  <div class="card c3">
+    <div class="ch">10. Improving Topic Representations (Representation Models)</div>
+    <div class="cb">
+      <div class="sm mb3">Refine the initial c-TF-IDF keywords using reranker / generative models.</div>
+      <div class="three">
+        <div>
+          <div class="b sm mb3 nv">A. KeyBERTInspired</div>
+          <div class="sm mb3">Compare embeddings of documents &amp; candidate keywords.</div>
+          <div style="background:var(--lb2);border:1.5px solid var(--blue);border-radius:4px;padding:5px;font-size:10.5px">
+            <b>Avg Doc Embedding</b><br>
+            <div style="display:flex;gap:3px;margin:3px 0">
+              <div style="background:var(--blue2);color:white;border-radius:2px;padding:2px 4px;font-size:10px">topic</div>
+              <div style="background:var(--green);color:white;border-radius:2px;padding:2px 4px;font-size:10px">modeling</div>
+            </div>
+            <b>Keyword Embeddings</b><br>→ Result: Ranked keywords for each topic.
+          </div>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">B. Maximal Marginal Relevance (MMR)</div>
+          <div class="sm mb3">Diversity + relevance (reduce redundancy).</div>
+          <div class="sm mb3">Select keywords that are:</div>
+          <ul class="ck">
+            <li>Relevant</li>
+            <li>Diverse</li>
+            <li>Informative</li>
+          </ul>
+        </div>
+        <div>
+          <div class="b sm mb3 nv">C. Text Generation (LLM)</div>
+          <div class="sm mb3">Generate topic labels from keywords + documents.</div>
+          <div class="flow" style="flex-direction:column;align-items:flex-start;gap:3px">
+            <div class="fn" style="font-size:10px">Keywords +<br>Top Documents</div>
+            <div class="fa">⬇</div>
+            <div style="background:var(--navy);color:white;border-radius:4px;padding:3px 7px;font-size:10px;font-weight:700">LLM (GPT / T5)</div>
+            <div class="fa">⬇</div>
+            <div class="fn gn" style="font-size:10px">Short Topic Label<br>"Neural Machine<br>Translation"</div>
+          </div>
+        </div>
+      </div>
+      <div class="b sm mt5 mb3">Why Use Representation Models?</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span style="background:var(--lg);border:1px solid var(--green);border-radius:3px;padding:2px 7px;font-size:11px">✅ Remove stop words</span>
+        <span style="background:var(--lg);border:1px solid var(--green);border-radius:3px;padding:2px 7px;font-size:11px">✅ Improve noise</span>
+        <span style="background:var(--lg);border:1px solid var(--green);border-radius:3px;padding:2px 7px;font-size:11px">✅ Reduce redundancy</span>
+        <span style="background:var(--lg);border:1px solid var(--green);border-radius:3px;padding:2px 7px;font-size:11px">✅ Add readable LLc quality</span>
+        <span style="background:var(--lg);border:1px solid var(--green);border-radius:3px;padding:2px 7px;font-size:11px">✅ Cargs-sele.cern modian</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 5 -->
+<div class="row">
+  <!-- 11. TOPIC LABELING WITH LLMs -->
+  <div class="card">
+    <div class="ch">11. Example: Topic Labeling with LLMs</div>
+    <div class="cb">
+      <div class="two">
+        <div>
+          <div class="b sm mb3">Using FLAN-T5 (Text-to-Text)</div>
+          <ul class="ck">
+            <li class="d">Top documents</li>
+            <li class="d">Top keywords</li>
+            <li class="d">Generates short topic label.</li>
+          </ul>
+          <div style="background:var(--lb2);border:1px solid var(--blue);border-radius:4px;padding:5px;font-size:10.5px;margin-top:4px">
+            <b>Example Output:</b><br>
+            "Advancements in Aspect-Based Sentiment Analysis"
+          </div>
+        </div>
+        <div>
+          <div class="b sm mb3">Using GPT-3.5 (ChatGPT)</div>
+          <div class="sm mb3">Produces more descriptive labels.</div>
+          <div style="background:var(--lb2);border:1px solid var(--blue);border-radius:4px;padding:5px;font-size:10.5px">
+            <b>Example Output:</b><br>
+            "Summarization"
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. VISUALIZING TOPICS -->
+  <div class="card">
+    <div class="ch">12. Visualizing Topics</div>
+    <div class="cb">
+      <div class="sm mb3">BERTopic provides rich visualizations.</div>
+      <ul class="ck">
+        <li class="d"><b>visualize_documents()</b> — 2D interactive map of topics.</li>
+        <li class="d"><b>visualize_barchart()</b> — Top keywords per topic.</li>
+        <li class="d"><b>visualize_heatmap()</b> — Topic similarity heatmap.</li>
+        <li class="d"><b>visualize_hierarchy()</b> — Hierarchical topic tree.</li>
+      </ul>
+      <div class="tip mt3">Helps explore, interpret, and communicate topics.</div>
+    </div>
+  </div>
+
+  <!-- 13. PRACTICAL USE CASES -->
+  <div class="card">
+    <div class="ch">13. Practical Use Cases</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="d"><b>Research paper exploration</b> (find emerging themes)</li>
+        <li class="d"><b>Customer feedback analysis</b> (topics in reviews/feedback)</li>
+        <li class="d"><b>News &amp; trend discovery</b> (what's being talked about)</li>
+        <li class="d"><b>Content organization</b> (auto-tagging &amp; grouping)</li>
+        <li class="d"><b>Outlier detection</b> (niche or unusual docs)</li>
+        <li class="d"><b>Data summarization</b> (large corpora → topics)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 14. END-TO-END PYTHON WORKFLOW -->
+  <div class="card c2">
+    <div class="ch">14. End-to-End Python Workflow</div>
+    <div class="cb">
+<pre><span class="cm"># 1. Load data</span>
+<span class="kw">from</span> datasets <span class="kw">import</span> load_dataset
+dataset = load_dataset(<span class="str">"maartengr/arxiv_nlp"</span>)
+
+<span class="cm"># 2. Embed</span>
+model = SentenceTransformer(<span class="str">"thenlper/gte-small"</span>)
+embeddings = model.encode(abstracts)
+
+<span class="cm"># 3. Dimensionality Reduction</span>
+<span class="kw">from</span> umap <span class="kw">import</span> UMAP
+umap_model = UMAP(n_components=<span class="nm">5</span>, …)
+
+<span class="cm"># 4. Cluster</span>
+<span class="kw">from</span> hdbscan <span class="kw">import</span> HDBSCAN
+hdbscan_model = HDBSCAN(min_cluster_size=<span class="nm">50</span>, …)
+clusters = hdbscan_model.fit_predict(reduced)
+
+<span class="cm"># 5. Topic modeling (BERTopic)</span>
+<span class="kw">from</span> bertopic <span class="kw">import</span> BERTopic
+topic_model = BERTopic(
+  embedding_model=model,
+  umap_model=umap_model,
+  hdbscan_model=hdbscan_model,
+)
+topic_model.fit(abstracts, embeddings)</pre>
+    </div>
+  </div>
+
+  <!-- 15. CHALLENGES & TIPS -->
+  <div class="card">
+    <div class="ch rd">15. Challenges &amp; Tips</div>
+    <div class="cb">
+      <div class="b sm mb3">Challenges</div>
+      <ul class="ck">
+        <li class="x">Choosing the right number of components</li>
+        <li class="x">Outliers &amp; noise</li>
+        <li class="x">Redundant keywords</li>
+        <li class="x">Interpreting topic quality</li>
+        <li class="x">Large-scale computation</li>
+      </ul>
+      <div class="b sm mt5 mb3">Tips</div>
+      <ul class="ck">
+        <li>Use semantic embeddings optimized for similarity</li>
+        <li>Validate topics manually</li>
+        <li>Use representation models for better labels</li>
+        <li>Experiment with parameters</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 6: Key Takeaways + Glossary + Further Resources -->
+<div class="row">
+  <!-- 16. KEY TAKEAWAYS -->
+  <div class="card c2">
+    <div class="ch or">16. Key Takeaways</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="st">Text clustering groups similar documents without labels.</li>
+        <li class="st">Topic modeling extracts themes described by keywords or labels.</li>
+        <li class="st">BERTopic combines clustering + c-TF-IDF + representation models.</li>
+        <li class="st">Modular design lets you mix &amp; match the best models.</li>
+        <li class="st">Representation models (KeyBERT, MMR, LLMs) greatly improve topics.</li>
+        <li class="st">Visualization + inspection = meaningful, interpretable topics.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 17. GLOSSARY -->
+  <div class="card c2">
+    <div class="ch">17. Glossary</div>
+    <div class="cb">
+      <table>
+        <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+        <tbody>
+          <tr><td><b>Embedding</b></td><td>Dense vector representation of text.</td></tr>
+          <tr><td><b>UMAP</b></td><td>Dimensionality reduction preserving structure.</td></tr>
+          <tr><td><b>HDBSCAN</b></td><td>Density-based clustering algorithm.</td></tr>
+          <tr><td><b>Outlier</b></td><td>Point not assigned to any cluster.</td></tr>
+          <tr><td><b>c-TF-IDF</b></td><td>Cluster Term Frequency (word count per cluster), modified Inverse Document Frequency emphasizing unique words.</td></tr>
+          <tr><td><b>Topic</b></td><td>A discovered theme in a collection of documents.</td></tr>
+          <tr><td><b>Representation Model</b></td><td>Model that refines topic keywords or labels.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 18. FURTHER READING & RESOURCES -->
+  <div class="card c2">
+    <div class="ch">18. Further Reading &amp; Resources</div>
+    <div class="cb">
+      <ul class="ck">
+        <li class="d">BERTopic Documentation: <span style="color:var(--blue2)">bertopic.dev</span></li>
+        <li class="d">BERTopic GitHub: <span style="color:var(--blue2)">github.com/MaartenGr/BERTopic</span></li>
+        <li class="d">UMAP Paper: <span style="color:var(--blue2)">arxiv.org/abs/1802.03426</span></li>
+        <li class="d">HDBSCAN Paper: <span style="color:var(--blue2)">arxiv.org/abs/1705.07321</span></li>
+        <li class="d">Topic Modeling Survey: <span style="color:var(--blue2)">arxiv.org/abs/2010.11905</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 19. ONE-LINE SUMMARY -->
+  <div class="card">
+    <div class="ch or">19. One-Line Summary</div>
+    <div class="cb">
+      <div style="font-size:13px;font-weight:700;color:var(--navy);line-height:1.6">
+        Cluster semantically similar texts, then describe each cluster (topic) with meaningful keywords or labels using a modular pipeline powered by modern models.
+      </div>
+      <div style="text-align:center;font-size:28px;margin-top:8px">🎯</div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
